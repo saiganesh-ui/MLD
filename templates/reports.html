@@ -1,0 +1,343 @@
+{% extends 'base.html' %}
+{% block title %}Automated Regulatory Reports — AML Analytics{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <h3 class="fw-bold mb-1 d-flex align-items-center gap-2">
+            <span class="brand-title"><i class="fa-solid fa-file-invoice text-primary me-2"></i>Automated Regulatory Reports</span>
+        </h3>
+        <p class="text-secondary small mb-0">Generate Suspicious Activity Reports (SAR), individual compliance risk dossiers, and raw data exports</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <span class="glass-badge badge-blue">
+            <i class="fa-solid fa-shield-halved text-cyan"></i> ReportLab 4.x PDF Engine
+        </span>
+        <span class="glass-badge badge-cyan">
+            <i class="fa-solid fa-file-csv"></i> Machine-Readable CSV
+        </span>
+    </div>
+</div>
+
+<!-- Download Status Alert Container -->
+<div id="report-alert-container"></div>
+
+<div class="row g-4 mb-4">
+    <!-- Section A: System Summary & SAR PDF Report -->
+    <div class="col-lg-6">
+        <div class="report-export-card">
+            <div class="d-flex align-items-start gap-3 mb-3">
+                <div class="report-export-icon" style="background: rgba(255, 82, 106, 0.15); border: 1px solid rgba(255, 82, 106, 0.35); color: var(--critical-red);">
+                    <i class="fa-solid fa-file-pdf"></i>
+                </div>
+                <div>
+                    <h5 class="fw-bold text-white mb-1">System Summary & SAR Report</h5>
+                    <span class="badge badge-critical mb-2">Formal Regulatory Dossier</span>
+                    <p class="text-secondary small mb-0">
+                        Generates a comprehensive executive PDF containing overall system telemetry, risk distributions, suspicious activity breakdowns, rule hit logs, and active alerts formatted as an official Suspicious Activity Report (SAR).
+                    </p>
+                </div>
+            </div>
+
+            <div class="p-3 rounded mb-3" style="background: rgba(11, 20, 37, 0.6); border: 1px solid var(--border-color); font-size: 0.8rem;">
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Document Type:</span>
+                    <span class="text-white fw-semibold">Suspicious Activity Report (SAR)</span>
+                </div>
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Format:</span>
+                    <span class="text-cyan fw-semibold">High-Resolution Vector PDF</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Coverage:</span>
+                    <span class="text-white fw-semibold">All Monitored Accounts & Inferences</span>
+                </div>
+            </div>
+
+            <div class="mt-auto pt-3 border-top border-secondary text-end">
+                <a href="{{ url_for('report.download_system_summary_pdf') }}" class="btn btn-glass-danger fw-semibold download-trigger-btn" data-report-name="System Summary SAR Report">
+                    <i class="fa-solid fa-download me-1"></i> Download PDF Report
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section B: Raw Data Exports (CSV) -->
+    <div class="col-lg-6">
+        <div class="report-export-card">
+            <div class="d-flex align-items-start gap-3 mb-3">
+                <div class="report-export-icon" style="background: rgba(24, 201, 139, 0.15); border: 1px solid rgba(24, 201, 139, 0.35); color: var(--success-emerald);">
+                    <i class="fa-solid fa-file-csv"></i>
+                </div>
+                <div>
+                    <h5 class="fw-bold text-white mb-1">Raw Data Exports (CSV)</h5>
+                    <span class="badge badge-low mb-2">Audit-Ready Datasets</span>
+                    <p class="text-secondary small mb-0">
+                        Export structured transaction and alert tables directly as clean, machine-readable CSV files suitable for external data analytics, banking core systems, or regulatory audit pipelines.
+                    </p>
+                </div>
+            </div>
+
+            <div class="p-3 rounded mb-3" style="background: rgba(11, 20, 37, 0.6); border: 1px solid var(--border-color); font-size: 0.8rem;">
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Encoding:</span>
+                    <span class="text-white fw-semibold">UTF-8 Comma-Separated Values</span>
+                </div>
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="text-muted">Dataset 1:</span>
+                    <span class="text-cyan fw-semibold">Evaluated Transactions & Inferences</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Dataset 2:</span>
+                    <span class="text-warning fw-semibold">Triage Alerts Queue & Risk Scores</span>
+                </div>
+            </div>
+
+            <div class="mt-auto pt-3 border-top border-secondary d-flex flex-wrap justify-content-end gap-2">
+                <a href="{{ url_for('report.download_transactions_csv') }}" class="btn btn-glass-success fw-semibold download-trigger-btn" data-report-name="Transactions CSV Export">
+                    <i class="fa-solid fa-file-arrow-down me-1"></i> Export Transactions CSV
+                </a>
+                <a href="{{ url_for('report.download_alerts_csv') }}" class="btn btn-glass-cyan fw-semibold download-trigger-btn" data-report-name="Alerts CSV Export">
+                    <i class="fa-solid fa-file-arrow-down me-1"></i> Export Alerts CSV
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Section C: Individual Customer Risk Reports Table -->
+<div class="glass-panel p-4 mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-3">
+        <div>
+            <h5 class="fw-bold text-white mb-1 d-flex align-items-center gap-2">
+                <i class="fa-solid fa-user-shield text-cyan-accent"></i> Individual Customer Risk Reports
+            </h5>
+            <p class="text-secondary small mb-0">Select an entity to compile an individual KYC and transaction compliance risk audit dossier</p>
+        </div>
+        <span class="glass-badge badge-blue" id="cust-count-badge">
+            {{ customers|length }} Customers Monitored
+        </span>
+    </div>
+
+    <!-- Filter and Search Toolbar -->
+    <div class="row g-2 mb-3">
+        <div class="col-md-5">
+            <div class="input-group">
+                <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                <input type="text" id="cust-search-input" class="form-control" placeholder="Search by Customer ID or Name..." value="{{ search or '' }}">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select id="cust-risk-filter" class="form-select">
+                <option value="All">All Risk Levels</option>
+                <option value="High" {% if risk_level == 'High' %}selected{% endif %}>High Risk Only</option>
+                <option value="Medium" {% if risk_level == 'Medium' %}selected{% endif %}>Medium Risk Only</option>
+                <option value="Low" {% if risk_level == 'Low' %}selected{% endif %}>Low Risk Only</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select id="cust-per-page" class="form-select">
+                <option value="10">10 per page</option>
+                <option value="25" selected>25 per page</option>
+                <option value="50">50 per page</option>
+            </select>
+        </div>
+        <div class="col-md-2 text-end">
+            <button id="cust-reset-btn" class="btn btn-glass-secondary w-100">
+                <i class="fa-solid fa-rotate-left me-1"></i> Reset
+            </button>
+        </div>
+    </div>
+
+    <!-- Customer Risk Reports Table -->
+    <div class="table-responsive">
+        <table class="glass-table" id="customer-reports-table">
+            <thead>
+                <tr>
+                    <th>Customer ID</th>
+                    <th>Customer Name</th>
+                    <th>Country / Jurisdiction</th>
+                    <th>Risk Score</th>
+                    <th>Risk Tier</th>
+                    <th class="text-end">Compliance Report</th>
+                </tr>
+            </thead>
+            <tbody id="customer-table-body">
+                {% for c in customers %}
+                <tr class="customer-row" data-id="{{ c.customer_id|lower }}" data-name="{{ c.name|lower }}" data-risk="{{ c.risk_level }}">
+                    <td><code>{{ c.customer_id }}</code></td>
+                    <td class="fw-bold text-white">{{ c.name }}</td>
+                    <td>
+                        <i class="fa-solid fa-location-dot text-cyan me-1"></i> {{ c.country }}
+                    </td>
+                    <td>
+                        <span class="font-monospace fw-bold {% if c.risk_level == 'High' %}text-danger{% elif c.risk_level == 'Medium' %}text-warning{% else %}text-success{% endif %}">
+                            {{ c.risk_score }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge {% if c.risk_level == 'High' %}badge-high{% elif c.risk_level == 'Medium' %}badge-medium{% else %}badge-low{% endif %}">
+                            {{ c.risk_level }}
+                        </span>
+                    </td>
+                    <td class="text-end">
+                        <a href="{{ url_for('report.download_customer_pdf', cust_id=c.customer_id) }}" class="btn btn-sm btn-glass-cyan py-1 px-3 download-trigger-btn" data-report-name="Customer Risk Dossier ({{ c.customer_id }})">
+                            <i class="fa-solid fa-file-pdf me-1"></i> Download PDF
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">No customers registered in the system.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination Controls -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 pt-3 border-top border-secondary gap-2">
+        <div class="text-secondary small" id="pagination-info">
+            Showing records 1 to 25
+        </div>
+        <div class="d-flex align-items-center gap-1" id="pagination-controls">
+            <!-- Dynamic page buttons injected by JS -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. Download Feedback Notification System
+    const downloadButtons = document.querySelectorAll('.download-trigger-btn');
+    const alertContainer = document.getElementById('report-alert-container');
+
+    downloadButtons.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            const reportName = this.getAttribute('data-report-name') || 'Report';
+            const originalHtml = this.innerHTML;
+
+            this.classList.add('disabled');
+            this.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Generating...';
+
+            showAlert(`<strong>Generation Initiated:</strong> Compiling ${reportName}. Your file download will begin shortly.`, 'cyan');
+
+            setTimeout(() => {
+                this.classList.remove('disabled');
+                this.innerHTML = originalHtml;
+            }, 3000);
+        });
+    });
+
+    function showAlert(message, type) {
+        alertContainer.innerHTML = `
+            <div class="glass-panel p-3 mb-4 d-flex align-items-center justify-content-between" style="background: rgba(16, 28, 48, 0.95); border-left: 4px solid var(--cyan-accent); animation: fadeSlideIn 0.3s ease-out;">
+                <div class="d-flex align-items-center gap-2 small text-white">
+                    <i class="fa-solid fa-circle-check text-cyan-accent fs-5"></i>
+                    <span>${message}</span>
+                </div>
+                <button type="button" class="btn-close btn-close-white ms-3" onclick="this.parentElement.remove()"></button>
+            </div>
+        `;
+    }
+
+    // 2. Interactive Filtering & Client-Side Pagination for Customer Table
+    const searchInput = document.getElementById('cust-search-input');
+    const riskFilter = document.getElementById('cust-risk-filter');
+    const perPageSelect = document.getElementById('cust-per-page');
+    const resetBtn = document.getElementById('cust-reset-btn');
+    const allRows = Array.from(document.querySelectorAll('.customer-row'));
+    const paginationInfo = document.getElementById('pagination-info');
+    const paginationControls = document.getElementById('pagination-controls');
+
+    let currentPage = 1;
+
+    function applyFilterAndPagination() {
+        const query = searchInput.value.toLowerCase().trim();
+        const selectedRisk = riskFilter.value;
+        const perPage = parseInt(perPageSelect.value);
+
+        // Filter rows
+        const matchedRows = allRows.filter(row => {
+            const id = row.getAttribute('data-id');
+            const name = row.getAttribute('data-name');
+            const risk = row.getAttribute('data-risk');
+
+            const matchesSearch = !query || id.includes(query) || name.includes(query);
+            const matchesRisk = selectedRisk === 'All' || risk.toLowerCase() === selectedRisk.toLowerCase();
+
+            return matchesSearch && matchesRisk;
+        });
+
+        // Hide all rows initially
+        allRows.forEach(r => r.style.display = 'none');
+
+        const totalMatched = matchedRows.length;
+        const totalPages = Math.max(1, Math.ceil(totalMatched / perPage));
+        if (currentPage > totalPages) currentPage = totalPages;
+
+        const startIndex = (currentPage - 1) * perPage;
+        const endIndex = Math.min(startIndex + perPage, totalMatched);
+
+        for (let i = startIndex; i < endIndex; i++) {
+            matchedRows[i].style.display = '';
+        }
+
+        // Update Info
+        paginationInfo.innerText = totalMatched > 0 
+            ? `Showing ${startIndex + 1} to ${endIndex} of ${totalMatched} customers`
+            : 'No matching records found';
+
+        // Render Pagination buttons
+        renderPaginationButtons(totalPages);
+    }
+
+    function renderPaginationButtons(totalPages) {
+        paginationControls.innerHTML = '';
+        if (totalPages <= 1) return;
+
+        // Prev button
+        const prevBtn = document.createElement('button');
+        prevBtn.className = `btn btn-sm btn-glass-secondary ${currentPage === 1 ? 'disabled' : ''}`;
+        prevBtn.innerHTML = '<i class="fa-solid fa-chevron-left"></i>';
+        prevBtn.addEventListener('click', () => { if (currentPage > 1) { currentPage--; applyFilterAndPagination(); } });
+        paginationControls.appendChild(prevBtn);
+
+        // Page pills (max 5 around current)
+        const startP = Math.max(1, currentPage - 2);
+        const endP = Math.min(totalPages, currentPage + 2);
+
+        for (let p = startP; p <= endP; p++) {
+            const pageBtn = document.createElement('button');
+            pageBtn.className = `btn btn-sm ${p === currentPage ? 'btn-glass-primary' : 'btn-glass-secondary'}`;
+            pageBtn.innerText = p;
+            pageBtn.addEventListener('click', () => { currentPage = p; applyFilterAndPagination(); });
+            paginationControls.appendChild(pageBtn);
+        }
+
+        // Next button
+        const nextBtn = document.createElement('button');
+        nextBtn.className = `btn btn-sm btn-glass-secondary ${currentPage === totalPages ? 'disabled' : ''}`;
+        nextBtn.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
+        nextBtn.addEventListener('click', () => { if (currentPage < totalPages) { currentPage++; applyFilterAndPagination(); } });
+        paginationControls.appendChild(nextBtn);
+    }
+
+    searchInput.addEventListener('input', () => { currentPage = 1; applyFilterAndPagination(); });
+    riskFilter.addEventListener('change', () => { currentPage = 1; applyFilterAndPagination(); });
+    perPageSelect.addEventListener('change', () => { currentPage = 1; applyFilterAndPagination(); });
+
+    resetBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        riskFilter.value = 'All';
+        currentPage = 1;
+        applyFilterAndPagination();
+    });
+
+    // Initial run
+    applyFilterAndPagination();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% block title %}Customer Directory — AML Analytics{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <h3 class="fw-bold mb-1 brand-title">Monitored Customer Directory</h3>
+        <p class="text-secondary small mb-0">Entity risk profiles, aggregate transaction exposures, and account holdings</p>
+    </div>
+</div>
+
+<div class="glass-panel p-3 mb-4">
+    <div class="row g-3">
+        <div class="col-md-5">
+            <div class="position-relative">
+                <i class="fa-solid fa-magnifying-glass position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+                <input type="text" id="cust-search" class="glass-input ps-5 w-100" placeholder="Search Customer Name / ID...">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <select id="cust-risk" class="glass-select w-100">
+                <option value="">All Risk Tiers</option>
+                <option value="Low">Low Risk (0–30)</option>
+                <option value="Medium">Medium Risk (31–70)</option>
+                <option value="High">High Risk (71–100)</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <button id="btn-search-cust" class="btn btn-glass-primary w-100">
+                <i class="fa-solid fa-user-check me-1"></i>Search Entities
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="glass-panel p-3">
+    <div class="table-responsive">
+        <table class="glass-table">
+            <thead>
+                <tr>
+                    <th>Customer ID</th>
+                    <th>Full Legal Name</th>
+                    <th>Age</th>
+                    <th>Occupation</th>
+                    <th>Jurisdiction</th>
+                    <th>Accounts Held</th>
+                    <th>Risk Rating</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="tbl-customers">
+                <tr><td colspan="8" class="text-center text-muted py-5"><i class="fa-solid fa-spinner fa-spin me-2"></i>Loading customer registry...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 pt-3 border-top border-secondary" style="border-color: var(--glass-border) !important;">
+        <span class="text-secondary small font-monospace" id="cust-page-info">Showing page 1</span>
+        <ul class="pagination pagination-sm mb-0 gap-1" id="cust-pagination"></ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentPage = 1;
+document.addEventListener('DOMContentLoaded', function() {
+    loadCust(1);
+    document.getElementById('btn-search-cust').addEventListener('click', () => loadCust(1));
+    document.getElementById('cust-search').addEventListener('keypress', (e) => { if (e.key === 'Enter') loadCust(1); });
+});
+
+function loadCust(page) {
+    currentPage = page;
+    const search = document.getElementById('cust-search').value;
+    const risk = document.getElementById('cust-risk').value;
+
+    fetch(`/api/customers?page=${page}&search=${encodeURIComponent(search)}&risk_level=${risk}`)
+        .then(r => r.json())
+        .then(data => {
+            const tbody = document.getElementById('tbl-customers');
+            tbody.innerHTML = '';
+            if (data.customers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-5"><i class="fa-solid fa-users-slash fs-3 mb-2 d-block"></i>No customers matching criteria.</td></tr>';
+                return;
+            }
+            data.customers.forEach(c => {
+                let badgeClass = 'badge-low';
+                if (c.risk_level === 'Medium') badgeClass = 'badge-medium';
+                if (c.risk_level === 'High') badgeClass = 'badge-high';
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td><code>${c.customer_id}</code></td>
+                        <td class="fw-semibold text-white">${c.name}</td>
+                        <td class="text-secondary font-monospace">${c.age}</td>
+                        <td class="text-secondary">${c.occupation || 'Unspecified'}</td>
+                        <td class="text-secondary">${c.country}</td>
+                        <td><span class="glass-badge badge-blue"><i class="fa-solid fa-building-columns"></i> ${c.account_count}</span></td>
+                        <td><span class="glass-badge ${badgeClass}">${c.risk_score} (${c.risk_level})</span></td>
+                        <td>
+                            <a href="/customers/${c.customer_id}" class="btn-glass-primary btn-sm py-1 px-3 text-decoration-none" style="font-size: 0.78rem;">
+                                View Profile &rarr;
+                            </a>
+                        </td>
+                    </tr>
+                `;
+            });
+            document.getElementById('cust-page-info').innerText = `Page ${data.current_page} of ${data.pages}`;
+            renderCustPagination(data.current_page, data.pages);
+        });
+}
+
+function renderCustPagination(current, total) {
+    const container = document.getElementById('cust-pagination');
+    container.innerHTML = '';
+    if (total <= 1) return;
+    for (let i = 1; i <= Math.min(total, 10); i++) {
+        const active = i === current ? 'btn-glass-primary' : 'btn-glass-secondary';
+        container.innerHTML += `<li class="page-item"><button class="btn btn-sm ${active} py-1 px-2 font-monospace" style="font-size: 0.8rem;" onclick="loadCust(${i}); return false;">${i}</button></li>`;
+    }
+}
+</script>
+{% endblock %}

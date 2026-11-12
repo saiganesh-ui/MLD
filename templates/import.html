@@ -1,0 +1,428 @@
+{% extends 'base.html' %}
+{% block title %}Batch Data Import Pipeline — AML Analytics{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <h3 class="fw-bold mb-1 d-flex align-items-center gap-2">
+            <span class="brand-title"><i class="fa-solid fa-file-csv text-primary me-2"></i>Batch Data Import Pipeline</span>
+        </h3>
+        <p class="text-secondary small mb-0">Upload CSV transactions into validation, OWL reasoning, and risk evaluation engines</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <span class="glass-badge badge-blue">
+            <i class="fa-solid fa-network-wired text-cyan"></i> End-to-End Ingestion Pipeline
+        </span>
+        <span class="glass-badge badge-cyan">
+            <i class="fa-solid fa-microchip"></i> Real-time XAI Reasoning
+        </span>
+    </div>
+</div>
+
+<!-- Visual 6-Stage Import Pipeline Indicator -->
+<div class="glass-panel p-3 mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <span class="text-white fw-bold small text-uppercase tracking-wider">
+            <i class="fa-solid fa-timeline text-cyan-accent me-1"></i> Multi-Engine Pipeline Execution Flow
+        </span>
+        <span class="badge badge-blue" id="pipeline-overall-status">Idle / Ready</span>
+    </div>
+
+    <div class="pipeline-stage-container">
+        <!-- 01 - Upload -->
+        <div class="pipeline-stage-box" id="stage-1">
+            <div class="pipeline-stage-num">01</div>
+            <div class="pipeline-stage-name"><i class="fa-solid fa-cloud-arrow-up me-1"></i> UPLOAD</div>
+            <div class="pipeline-stage-status text-muted" id="stage-status-1">Pending</div>
+        </div>
+
+        <!-- 02 - Validate -->
+        <div class="pipeline-stage-box" id="stage-2">
+            <div class="pipeline-stage-num">02</div>
+            <div class="pipeline-stage-name"><i class="fa-solid fa-shield-halved me-1"></i> VALIDATE</div>
+            <div class="pipeline-stage-status text-muted" id="stage-status-2">Pending</div>
+        </div>
+
+        <!-- 03 - Clean -->
+        <div class="pipeline-stage-box" id="stage-3">
+            <div class="pipeline-stage-num">03</div>
+            <div class="pipeline-stage-name"><i class="fa-solid fa-broom me-1"></i> CLEAN</div>
+            <div class="pipeline-stage-status text-muted" id="stage-status-3">Pending</div>
+        </div>
+
+        <!-- 04 - Detect -->
+        <div class="pipeline-stage-box" id="stage-4">
+            <div class="pipeline-stage-num">04</div>
+            <div class="pipeline-stage-name"><i class="fa-solid fa-brain me-1"></i> DETECT</div>
+            <div class="pipeline-stage-status text-muted" id="stage-status-4">Pending</div>
+        </div>
+
+        <!-- 05 - Risk Score -->
+        <div class="pipeline-stage-box" id="stage-5">
+            <div class="pipeline-stage-num">05</div>
+            <div class="pipeline-stage-name"><i class="fa-solid fa-gauge-high me-1"></i> RISK SCORE</div>
+            <div class="pipeline-stage-status text-muted" id="stage-status-5">Pending</div>
+        </div>
+
+        <!-- 06 - Save DB -->
+        <div class="pipeline-stage-box" id="stage-6">
+            <div class="pipeline-stage-num">06</div>
+            <div class="pipeline-stage-name"><i class="fa-solid fa-database me-1"></i> PERSIST</div>
+            <div class="pipeline-stage-status text-muted" id="stage-status-6">Pending</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Section A & B: CSV Upload & Execution Card -->
+    <div class="col-lg-6">
+        <div class="glass-panel p-4 h-100 d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-white mb-0 d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-cloud-arrow-up text-primary"></i> Upload Transactions CSV
+                </h5>
+                <span class="badge badge-cyan">Max 16 MB</span>
+            </div>
+
+            <form id="upload-form" enctype="multipart/form-data">
+                <!-- Drag and Drop Target Area -->
+                <div class="upload-dropzone mb-3" id="dropzone">
+                    <input type="file" id="csv-file-input" name="file" class="d-none" accept=".csv" required>
+                    <div id="dropzone-prompt">
+                        <i class="fa-solid fa-file-arrow-up display-4 text-cyan-accent mb-3 d-block"></i>
+                        <h6 class="fw-bold text-white mb-1">Drag and drop your transactions CSV here</h6>
+                        <p class="text-secondary small mb-3">or click to browse your local computer</p>
+                        <button type="button" class="btn btn-sm btn-glass-secondary" onclick="document.getElementById('csv-file-input').click()">
+                            <i class="fa-solid fa-folder-open me-1"></i> Browse Files
+                        </button>
+                    </div>
+
+                    <!-- Selected File Info (hidden until file chosen) -->
+                    <div id="file-info-container" class="d-none text-start p-3 rounded" style="background: rgba(7, 13, 25, 0.7); border: 1px solid var(--border-color);">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-3">
+                                <i class="fa-solid fa-file-csv fs-2 text-success"></i>
+                                <div>
+                                    <div class="text-white fw-bold small text-truncate" id="file-name-display" style="max-width: 250px;">filename.csv</div>
+                                    <div class="text-muted" style="font-size: 0.75rem;" id="file-size-display">0 KB</div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-sm text-danger p-1" id="btn-remove-file" title="Remove File">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Accepted Columns Schema Box -->
+                <div class="p-3 rounded mb-4" style="background: rgba(11, 20, 37, 0.6); border: 1px solid var(--border-color); font-size: 0.78rem;">
+                    <div class="fw-bold text-light mb-1">
+                        <i class="fa-solid fa-table-columns text-cyan-accent me-1"></i> Required CSV Columns:
+                    </div>
+                    <div class="d-flex flex-wrap gap-1 mb-2">
+                        <code>sender_account</code>
+                        <code>receiver_account</code>
+                        <code>amount</code>
+                        <code>sender_country</code>
+                        <code>receiver_country</code>
+                    </div>
+                    <div class="text-muted" style="font-size: 0.72rem;">
+                        Optional columns: <code>transaction_id</code>, <code>currency</code>, <code>transaction_type</code>, <code>transaction_date</code>, <code>description</code>.
+                    </div>
+                </div>
+
+                <!-- Prominent Execute Import Button -->
+                <button type="submit" id="btn-upload" class="btn btn-glass-primary fw-bold w-100 py-3" disabled>
+                    <i class="fa-solid fa-play me-2"></i> EXECUTE IMPORT & DETECTION PIPELINE
+                </button>
+            </form>
+
+            <div class="mt-auto pt-3 border-top border-secondary text-secondary small">
+                <i class="fa-solid fa-circle-info text-cyan me-1"></i> Pre-packaged sample template file available at: <code>data/transactions.csv</code>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section C & E: Live Processing Summary & Results -->
+    <div class="col-lg-6">
+        <div class="glass-panel p-4 h-100 d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-white mb-0 d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-chart-column text-success"></i> Import Processing Summary
+                </h5>
+                <span class="glass-badge badge-blue" id="summary-badge">Real-Time Telemetry</span>
+            </div>
+
+            <!-- Placeholder State -->
+            <div id="import-placeholder" class="text-center py-5 text-secondary flex-grow-1 d-flex flex-column align-items-center justify-content-center">
+                <i class="fa-solid fa-server display-4 mb-3 d-block opacity-40 text-cyan-accent"></i>
+                <h6 class="fw-bold text-white mb-1">No Active Batch Execution</h6>
+                <p class="small text-muted" style="max-width: 320px;">
+                    Select and upload a CSV file on the left to initiate multi-engine reasoning and inspect processing metrics.
+                </p>
+            </div>
+
+            <!-- Active Processing Spinner Container -->
+            <div id="import-processing-spinner" class="d-none text-center py-5 flex-grow-1 d-flex flex-column align-items-center justify-content-center">
+                <div class="spinner-border text-cyan-accent mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
+                <h6 class="fw-bold text-white mb-1">Pipeline Ingestion in Progress...</h6>
+                <p class="text-secondary small" id="processing-step-msg">Evaluating rule sets, executing ontology SPARQL queries, and computing risk matrices...</p>
+            </div>
+
+            <!-- Completed Summary Table & Results -->
+            <div id="import-summary-content" class="d-none flex-grow-1 d-flex flex-column">
+                <div class="p-3 mb-3 rounded d-flex align-items-center justify-content-between" style="background: rgba(24, 201, 139, 0.12); border: 1px solid rgba(24, 201, 139, 0.35);">
+                    <div class="d-flex align-items-center gap-2 text-white small">
+                        <i class="fa-solid fa-circle-check text-success fs-5"></i>
+                        <span id="import-msg" class="fw-semibold">Batch import pipeline completed successfully.</span>
+                    </div>
+                    <span class="badge badge-low" id="res-duration">0.00s</span>
+                </div>
+
+                <div class="table-responsive mb-4">
+                    <table class="glass-table">
+                        <tbody>
+                            <tr>
+                                <th class="text-secondary" style="width: 60%;"><i class="fa-solid fa-file-import me-1 text-primary"></i> Total Records Uploaded:</th>
+                                <td class="fw-bold font-monospace text-white" id="res-total">0</td>
+                            </tr>
+                            <tr>
+                                <th class="text-secondary"><i class="fa-solid fa-circle-check me-1 text-success"></i> Successfully Processed Records:</th>
+                                <td class="fw-bold font-monospace text-success" id="res-valid">0</td>
+                            </tr>
+                            <tr>
+                                <th class="text-secondary"><i class="fa-solid fa-circle-xmark me-1 text-danger"></i> Invalid / Rejected Records:</th>
+                                <td class="fw-bold font-monospace text-danger" id="res-invalid">0</td>
+                            </tr>
+                            <tr>
+                                <th class="text-secondary"><i class="fa-solid fa-triangle-exclamation me-1 text-warning"></i> Potentially Suspicious Flagged:</th>
+                                <td class="fw-bold font-monospace text-warning" id="res-suspicious">0</td>
+                            </tr>
+                            <tr>
+                                <th class="text-secondary"><i class="fa-solid fa-bell me-1 text-danger"></i> Automated Alerts Generated:</th>
+                                <td class="fw-bold font-monospace text-danger" id="res-alerts">0</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Quick Action Navigation -->
+                <div class="mt-auto pt-3 border-top border-secondary d-flex flex-wrap justify-content-end gap-2">
+                    <a href="{{ url_for('transaction.list_transactions') }}" class="btn btn-sm btn-glass-secondary">
+                        <i class="fa-solid fa-money-bill-transfer me-1"></i> Inspect Transactions
+                    </a>
+                    <a href="{{ url_for('alert.list_alerts') }}" class="btn btn-sm btn-glass-danger">
+                        <i class="fa-solid fa-bell me-1"></i> Triage Alerts
+                    </a>
+                    <a href="{{ url_for('dashboard.index') }}" class="btn btn-sm btn-glass-primary">
+                        <i class="fa-solid fa-chart-line me-1"></i> View Dashboard Telemetry
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('csv-file-input');
+    const dropzone = document.getElementById('dropzone');
+    const dropzonePrompt = document.getElementById('dropzone-prompt');
+    const fileInfoContainer = document.getElementById('file-info-container');
+    const fileNameDisplay = document.getElementById('file-name-display');
+    const fileSizeDisplay = document.getElementById('file-size-display');
+    const removeFileBtn = document.getElementById('btn-remove-file');
+    const uploadBtn = document.getElementById('btn-upload');
+    const form = document.getElementById('upload-form');
+
+    // Drag and drop event handlers
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.add('dragover');
+        });
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.remove('dragover');
+        });
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files.length) {
+            handleSelectedFile(files[0]);
+        }
+    });
+
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files.length) {
+            handleSelectedFile(fileInput.files[0]);
+        }
+    });
+
+    function handleSelectedFile(file) {
+        if (!file.name.toLowerCase().endsWith('.csv')) {
+            alert('Invalid file format. Please select a .csv file.');
+            clearSelectedFile();
+            return;
+        }
+
+        dropzonePrompt.classList.add('d-none');
+        fileInfoContainer.classList.remove('d-none');
+        fileNameDisplay.innerText = file.name;
+        fileSizeDisplay.innerText = formatFileSize(file.size);
+        uploadBtn.disabled = false;
+
+        updateStage(1, 'active', 'File Selected');
+    }
+
+    function clearSelectedFile() {
+        fileInput.value = '';
+        dropzonePrompt.classList.remove('d-none');
+        fileInfoContainer.classList.add('d-none');
+        uploadBtn.disabled = true;
+        resetPipelineStages();
+    }
+
+    removeFileBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        clearSelectedFile();
+    });
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // Pipeline stage visual updater
+    function updateStage(stageNum, state, statusText) {
+        const box = document.getElementById(`stage-${stageNum}`);
+        const status = document.getElementById(`stage-status-${stageNum}`);
+        if (!box || !status) return;
+
+        box.className = `pipeline-stage-box ${state}`;
+        status.innerText = statusText;
+
+        if (state === 'active') {
+            status.className = 'pipeline-stage-status text-cyan-accent';
+        } else if (state === 'completed') {
+            status.className = 'pipeline-stage-status text-success';
+        } else if (state === 'failed') {
+            status.className = 'pipeline-stage-status text-danger';
+        } else {
+            status.className = 'pipeline-stage-status text-muted';
+        }
+    }
+
+    function resetPipelineStages() {
+        for (let i = 1; i <= 6; i++) {
+            updateStage(i, '', 'Pending');
+        }
+        document.getElementById('pipeline-overall-status').className = 'badge badge-blue';
+        document.getElementById('pipeline-overall-status').innerText = 'Idle / Ready';
+    }
+
+    // Form submit pipeline execution
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        if (!fileInput.files.length) return;
+
+        // Prevent accidental duplicates
+        uploadBtn.disabled = true;
+        uploadBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> EXECUTING DETECTION PIPELINE...';
+
+        document.getElementById('import-placeholder').classList.add('d-none');
+        document.getElementById('import-summary-content').classList.add('d-none');
+        document.getElementById('import-processing-spinner').classList.remove('d-none');
+
+        document.getElementById('pipeline-overall-status').className = 'badge badge-cyan';
+        document.getElementById('pipeline-overall-status').innerText = 'Processing Pipeline Active';
+
+        // Stage 1 & 2 progress simulation
+        updateStage(1, 'completed', 'Uploaded');
+        updateStage(2, 'active', 'Validating Schema');
+
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+
+        setTimeout(() => {
+            updateStage(2, 'completed', 'Validated');
+            updateStage(3, 'active', 'Cleaning Data');
+        }, 400);
+
+        setTimeout(() => {
+            updateStage(3, 'completed', 'Cleaned');
+            updateStage(4, 'active', 'Reasoning & ML');
+        }, 900);
+
+        fetch('/api/upload', {
+            method: 'POST',
+            body: formData
+        })
+        .then(r => r.json())
+        .then(data => {
+            uploadBtn.disabled = false;
+            uploadBtn.innerHTML = '<i class="fa-solid fa-play me-2"></i> EXECUTE IMPORT & DETECTION PIPELINE';
+            document.getElementById('import-processing-spinner').classList.add('d-none');
+
+            if (data.success) {
+                updateStage(4, 'completed', 'Detected');
+                updateStage(5, 'completed', 'Scored');
+                updateStage(6, 'completed', 'Committed to DB');
+
+                document.getElementById('pipeline-overall-status').className = 'badge badge-low';
+                document.getElementById('pipeline-overall-status').innerText = 'Batch Completed';
+
+                document.getElementById('import-summary-content').classList.remove('d-none');
+                document.getElementById('import-msg').innerText = data.message || 'Batch import completed successfully.';
+
+                const summary = data.summary || {};
+                document.getElementById('res-total').innerText = (summary.records_uploaded || 0).toLocaleString();
+                document.getElementById('res-valid').innerText = (summary.valid_records || 0).toLocaleString();
+                document.getElementById('res-invalid').innerText = (summary.invalid_records || 0).toLocaleString();
+                document.getElementById('res-suspicious').innerText = (summary.suspicious_records || 0).toLocaleString();
+                document.getElementById('res-alerts').innerText = (summary.alerts_generated || 0).toLocaleString();
+
+                if (summary.duration_seconds !== undefined) {
+                    document.getElementById('res-duration').innerText = `Duration: ${summary.duration_seconds}s`;
+                }
+            } else {
+                updateStage(4, 'failed', 'Error');
+                updateStage(5, '', 'Aborted');
+                updateStage(6, '', 'Aborted');
+
+                document.getElementById('pipeline-overall-status').className = 'badge badge-high';
+                document.getElementById('pipeline-overall-status').innerText = 'Execution Failed';
+
+                alert('Import Processing Error: ' + (data.error || 'Failed to process CSV file.'));
+                document.getElementById('import-placeholder').classList.remove('d-none');
+            }
+        })
+        .catch(err => {
+            uploadBtn.disabled = false;
+            uploadBtn.innerHTML = '<i class="fa-solid fa-play me-2"></i> EXECUTE IMPORT & DETECTION PIPELINE';
+            document.getElementById('import-processing-spinner').classList.add('d-none');
+            document.getElementById('import-placeholder').classList.remove('d-none');
+
+            updateStage(2, 'failed', 'Server Error');
+            document.getElementById('pipeline-overall-status').className = 'badge badge-high';
+            document.getElementById('pipeline-overall-status').innerText = 'Server Error';
+
+            alert('Server error executing CSV import pipeline.');
+        });
+    });
+});
+</script>
+{% endblock %}

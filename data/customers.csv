@@ -1,0 +1,4 @@
+customer_id,name,age,occupation,country
+CUST-9001,John Doe,42,Software Engineer,United States
+CUST-9002,Jane Smith,38,Financial Analyst,United Kingdom
+CUST-9003,Acme Offshore Holdings,50,Corporate,Panama

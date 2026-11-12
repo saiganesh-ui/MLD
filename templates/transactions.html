@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block title %}Transactions Registry — AML Analytics{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <h3 class="fw-bold mb-1 brand-title">Financial Transactions Registry</h3>
+        <p class="text-secondary small mb-0">High-throughput transaction inspection, multi-attribute filtering, and threat screening</p>
+    </div>
+</div>
+
+<!-- Glassmorphism Filters Toolbar -->
+<div class="glass-panel p-3 mb-4">
+    <div class="row g-3 align-items-center">
+        <div class="col-lg-3 col-md-6">
+            <div class="position-relative">
+                <i class="fa-solid fa-magnifying-glass position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+                <input type="text" id="filter-search" class="glass-input ps-5 w-100" placeholder="Search Tx ID / Account...">
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-3">
+            <select id="filter-risk" class="glass-select w-100">
+                <option value="">All Risk Tiers</option>
+                <option value="Low">Low Risk (0–30)</option>
+                <option value="Medium">Medium Risk (31–70)</option>
+                <option value="High">High Risk (71–100)</option>
+            </select>
+        </div>
+        <div class="col-lg-2 col-md-3">
+            <select id="filter-country" class="glass-select w-100">
+                <option value="">All Jurisdictions</option>
+                <option value="Panama">Panama</option>
+                <option value="Cayman Islands">Cayman Islands</option>
+                <option value="Seychelles">Seychelles</option>
+                <option value="United States">United States</option>
+                <option value="United Kingdom">United Kingdom</option>
+                <option value="Switzerland">Switzerland</option>
+            </select>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="form-check form-switch ps-5 mt-1">
+                <input class="form-check-input bg-dark border-secondary" type="checkbox" id="filter-suspicious" style="cursor: pointer;">
+                <label class="form-check-input-label text-warning fw-semibold small" for="filter-suspicious">
+                    <i class="fa-solid fa-triangle-exclamation me-1"></i>Flagged Suspicious Only
+                </label>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-6 text-end">
+            <button class="btn btn-glass-cyan w-100" id="btn-apply-filters">
+                <i class="fa-solid fa-filter me-1"></i>Apply Filters
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Transactions Glass Data Table -->
+<div class="glass-panel p-3">
+    <div class="table-responsive">
+        <table class="glass-table">
+            <thead>
+                <tr>
+                    <th>Transaction ID</th>
+                    <th>Origin Account</th>
+                    <th>Beneficiary Account</th>
+                    <th>Transfer Amount</th>
+                    <th>Type</th>
+                    <th>Jurisdiction Flow</th>
+                    <th>Risk Score</th>
+                    <th>Suspicious Flag</th>
+                    <th>Forensic Action</th>
+                </tr>
+            </thead>
+            <tbody id="tbl-transactions">
+                <tr><td colspan="9" class="text-center text-muted py-5"><i class="fa-solid fa-spinner fa-spin me-2"></i>Querying financial registry...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination Controls -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 pt-3 border-top border-secondary" style="border-color: var(--glass-border) !important;">
+        <span class="text-secondary small font-monospace" id="page-info">Showing page 1</span>
+        <ul class="pagination pagination-sm mb-0 gap-1" id="pagination-controls"></ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/transactions.js') }}"></script>
+{% endblock %}

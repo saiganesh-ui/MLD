@@ -1,0 +1,279 @@
+{% extends 'base.html' %}
+{% block title %}Investigation Cockpit — {{ transaction.transaction_id }}{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <a href="{{ url_for('transaction.list_transactions') }}" class="btn-glass-secondary btn-sm mb-2 d-inline-flex align-items-center gap-1 text-decoration-none">
+            <i class="fa-solid fa-arrow-left"></i> Back to Transactions
+        </a>
+        <h3 class="fw-bold mb-1 brand-title d-flex align-items-center gap-2">
+            Forensic Dossier: {{ transaction.transaction_id }}
+        </h3>
+        <p class="text-secondary small mb-0">Multi-engine explainability, semantic ontology deduction, and risk topology</p>
+    </div>
+    <form action="{{ url_for('transaction.analyze_transaction', tx_id=transaction.transaction_id) }}" method="POST" class="d-inline">
+        <button type="submit" class="btn btn-glass-cyan">
+            <i class="fa-solid fa-arrows-spin me-1"></i> Re-Evaluate Detection Pipeline
+        </button>
+    </form>
+</div>
+
+<!-- Top Forensic Overview & Glowing Risk Gauge -->
+<div class="row g-4 mb-4">
+    <!-- Transaction Attributes Panel -->
+    <div class="col-lg-7">
+        <div class="glass-panel p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-white mb-0 d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-fingerprint text-cyan-accent" style="color: var(--cyan-accent);"></i> Core Transaction Metadata
+                </h5>
+                <span class="glass-badge badge-blue">{{ transaction.transaction_type }}</span>
+            </div>
+
+            <div class="row g-3 pt-2">
+                <div class="col-sm-6">
+                    <span class="text-muted small">Transaction Identifier</span>
+                    <div class="fw-bold fs-6 mt-1"><code>{{ transaction.transaction_id }}</code></div>
+                </div>
+                <div class="col-sm-6">
+                    <span class="text-muted small">Transfer Amount</span>
+                    <div class="fw-bold font-monospace fs-4 text-white mt-1">
+                        ${{ "{:,.2f}".format(transaction.amount) }} <span class="fs-6 text-cyan-accent" style="color: var(--cyan-accent);">{{ transaction.currency }}</span>
+                    </div>
+                </div>
+
+                <div class="col-sm-6">
+                    <span class="text-muted small">Origin Account (Sender)</span>
+                    <div class="mt-1">
+                        <span class="font-monospace text-white">{{ transaction.sender_account }}</span>
+                        {% if sender_cust %}
+                            <div><a href="{{ url_for('customer.view_customer', cust_id=sender_cust.customer_id) }}" class="text-primary small text-decoration-none"><i class="fa-solid fa-user me-1"></i>{{ sender_cust.name }} ({{ sender_cust.customer_id }})</a></div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="col-sm-6">
+                    <span class="text-muted small">Beneficiary Account (Receiver)</span>
+                    <div class="mt-1">
+                        <span class="font-monospace text-white">{{ transaction.receiver_account }}</span>
+                        {% if receiver_cust %}
+                            <div><a href="{{ url_for('customer.view_customer', cust_id=receiver_cust.customer_id) }}" class="text-primary small text-decoration-none"><i class="fa-solid fa-user me-1"></i>{{ receiver_cust.name }} ({{ receiver_cust.customer_id }})</a></div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="col-sm-6">
+                    <span class="text-muted small">Execution Timestamp</span>
+                    <div class="text-white small font-monospace mt-1">
+                        <i class="fa-regular fa-clock me-1 text-muted"></i>{{ transaction.transaction_date.strftime('%Y-%m-%d %H:%M:%S UTC') }}
+                    </div>
+                </div>
+
+                <div class="col-sm-6">
+                    <span class="text-muted small">Geographic Flow</span>
+                    <div class="text-white small mt-1">
+                        <span class="badge bg-dark border border-secondary">{{ transaction.sender_country }}</span>
+                        <i class="fa-solid fa-arrow-right text-cyan-accent mx-1" style="color: var(--cyan-accent);"></i>
+                        <span class="badge bg-dark border border-secondary">{{ transaction.receiver_country }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Glowing Risk Gauge Card -->
+    <div class="col-lg-5">
+        <div class="glass-panel p-4 h-100 text-center d-flex flex-column justify-content-center align-items-center position-relative overflow-hidden">
+            <div class="position-absolute" style="top: -60px; right: -60px; width: 180px; height: 180px; background: radial-gradient(circle, {% if transaction.risk_score >= 71 %}rgba(251, 82, 104, 0.25){% elif transaction.risk_score >= 31 %}rgba(251, 191, 36, 0.25){% else %}rgba(16, 185, 129, 0.25){% endif %}, transparent 70%); border-radius: 50%; pointer-events: none;"></div>
+
+            <h6 class="fw-bold text-muted text-uppercase letter-spacing-1 mb-2">Evaluated Composite Risk Rating</h6>
+            
+            <div class="display-2 fw-bold font-monospace my-2 {% if transaction.risk_score >= 71 %}text-danger{% elif transaction.risk_score >= 31 %}text-warning{% else %}text-success{% endif %}" style="text-shadow: 0 0 25px currentColor;">
+                {{ transaction.risk_score }}
+                <span class="fs-5 text-muted">/ 100</span>
+            </div>
+
+            <div class="mb-3">
+                {% if transaction.risk_score >= 71 %}
+                    <span class="glass-badge badge-high fs-6 px-3 py-1">
+                        <i class="fa-solid fa-triangle-exclamation"></i> HIGH RISK STATE
+                    </span>
+                {% elif transaction.risk_score >= 31 %}
+                    <span class="glass-badge badge-medium fs-6 px-3 py-1">
+                        <i class="fa-solid fa-circle-exclamation"></i> MEDIUM ELEVATED
+                    </span>
+                {% else %}
+                    <span class="glass-badge badge-low fs-6 px-3 py-1">
+                        <i class="fa-solid fa-shield-check"></i> LOW RISK PROFILE
+                    </span>
+                {% endif %}
+            </div>
+
+            <div class="p-2 rounded w-100 mt-2" style="background: rgba(7, 11, 20, 0.6); border: 1px solid var(--glass-border);">
+                <div class="d-flex justify-content-around text-center small">
+                    <div>
+                        <div class="text-muted" style="font-size: 0.7rem;">RULES HIT</div>
+                        <div class="fw-bold text-white font-monospace">{{ analysis.rule_results.total_detected }}</div>
+                    </div>
+                    <div class="border-end border-secondary"></div>
+                    <div>
+                        <div class="text-muted" style="font-size: 0.7rem;">ONTOLOGY</div>
+                        <div class="fw-bold {% if analysis.ontology_results.is_suspicious %}text-danger{% else %}text-success{% endif %}">
+                            {{ 'MATCHED' if analysis.ontology_results.is_suspicious else 'CLEAR' }}
+                        </div>
+                    </div>
+                    <div class="border-end border-secondary"></div>
+                    <div>
+                        <div class="text-muted" style="font-size: 0.7rem;">ISOLATION FOREST</div>
+                        <div class="fw-bold text-cyan-accent font-monospace" style="color: var(--cyan-accent);">
+                            {{ analysis.ml_results.anomaly_score }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- WHY WAS THIS FLAGGED? EXPLAINABILITY SECTION -->
+<div class="glass-panel p-4 mb-4" style="border-left: 4px solid var(--warning-amber);">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold text-warning mb-0 d-flex align-items-center gap-2">
+            <i class="fa-solid fa-lightbulb"></i> WHY WAS THIS TRANSACTION FLAGGED?
+        </h5>
+        <span class="glass-badge badge-cyan">Explainable AI (XAI) Matrix</span>
+    </div>
+
+    <!-- 1. Score Factor Contributions -->
+    <h6 class="fw-bold text-white mt-3 mb-2"><i class="fa-solid fa-scale-balanced me-2 text-primary"></i>1. Factor Contribution Breakdown</h6>
+    <div class="row g-2 mb-4">
+        {% for r in analysis.reasons %}
+            <div class="col-md-6">
+                <div class="p-3 rounded h-100 d-flex align-items-start gap-3" style="background: rgba(21, 33, 54, 0.5); border: 1px solid var(--glass-border);">
+                    <div class="badge bg-primary font-monospace fs-6 px-2 py-1 mt-1">+{{ r.score }}</div>
+                    <div>
+                        <div class="fw-bold text-white">{{ r.factor }}</div>
+                        <div class="text-secondary small mt-1">{{ r.text }}</div>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="col-12">
+                <div class="p-3 rounded text-muted small" style="background: rgba(11, 18, 32, 0.5);">
+                    No adverse factors identified. Transaction exhibits nominal baseline parameters.
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- 2. Ontology Semantic Inferences -->
+    <h6 class="fw-bold text-white mb-2"><i class="fa-solid fa-diagram-project me-2 text-cyan-accent" style="color: var(--cyan-accent);"></i>2. Ontology Semantic Deductions</h6>
+    <div class="p-3 rounded mb-4" style="background: rgba(11, 18, 32, 0.6); border: 1px solid rgba(34, 211, 238, 0.25);">
+        {% if analysis.ontology_results.inferences %}
+            <div class="fw-semibold text-cyan-accent mb-2 small" style="color: var(--cyan-accent);">
+                <i class="fa-solid fa-check-double me-1"></i>Formal Deductions from MoneyLaunderingDetectionOntology:
+            </div>
+            <ul class="mb-2 ps-3">
+                {% for inf in analysis.ontology_results.inferences %}
+                    <li class="text-white small mb-1">{{ inf }}</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div class="text-muted small">No semantic ontology restrictions or risk classes violated.</div>
+        {% endif %}
+
+        <div class="mt-2 pt-2 border-top border-secondary text-secondary small" style="border-color: rgba(148, 163, 184, 0.1) !important;">
+            <strong>Underlying RDF Grounding Facts:</strong>
+            <span class="text-muted">{{ analysis.ontology_results.source_facts | join(' • ') }}</span>
+        </div>
+    </div>
+
+    <!-- 3. Rule Engine Evidence Matrix -->
+    <h6 class="fw-bold text-white mb-2"><i class="fa-solid fa-list-check me-2 text-success"></i>3. Rule Engine Deterministic Evidence Matrix</h6>
+    <div class="table-responsive">
+        <table class="glass-table">
+            <thead>
+                <tr>
+                    <th>Rule Code</th>
+                    <th>Detection Principle</th>
+                    <th>State</th>
+                    <th>Weight Added</th>
+                    <th>Evaluation Evidence</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rule in analysis.rule_results.rules %}
+                    <tr class="{% if rule.detected %}table-active{% endif %}" style="{% if rule.detected %}background: rgba(251, 82, 104, 0.08);{% endif %}">
+                        <td><code>{{ rule.rule_id }}</code></td>
+                        <td class="fw-semibold text-white">{{ rule.rule_name }}</td>
+                        <td>
+                            {% if rule.detected %}
+                                <span class="glass-badge badge-high"><i class="fa-solid fa-triangle-exclamation"></i> TRIGGERED</span>
+                            {% else %}
+                                <span class="glass-badge badge-low"><i class="fa-solid fa-check"></i> Nominal</span>
+                            {% endif %}
+                        </td>
+                        <td class="font-monospace fw-bold text-white">+{{ rule.score_contribution }}</td>
+                        <td><small class="text-secondary">{{ rule.explanation }}</small></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Associated Alerts Queue -->
+<div class="glass-panel p-4 mb-4">
+    <h5 class="fw-bold text-white mb-3 d-flex align-items-center gap-2">
+        <i class="fa-solid fa-bell text-danger"></i> Generated Compliance Alerts
+    </h5>
+    {% if alerts %}
+        <div class="table-responsive">
+            <table class="glass-table">
+                <thead>
+                    <tr>
+                        <th>Alert ID</th>
+                        <th>Pattern Classification</th>
+                        <th>Severity</th>
+                        <th>Risk Score</th>
+                        <th>Workflow Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in alerts %}
+                        <tr>
+                            <td><code>{{ a.alert_id }}</code></td>
+                            <td class="fw-semibold text-white">{{ a.alert_type }}</td>
+                            <td>
+                                {% if a.severity == 'CRITICAL' %}
+                                    <span class="glass-badge badge-critical">CRITICAL</span>
+                                {% elif a.severity == 'HIGH' %}
+                                    <span class="glass-badge badge-high">HIGH</span>
+                                {% elif a.severity == 'WARNING' %}
+                                    <span class="glass-badge badge-medium">WARNING</span>
+                                {% else %}
+                                    <span class="glass-badge badge-blue">INFO</span>
+                                {% endif %}
+                            </td>
+                            <td class="font-monospace fw-bold text-white">{{ a.risk_score }}</td>
+                            <td><span class="glass-badge badge-cyan">{{ a.status }}</span></td>
+                            <td>
+                                <a href="{{ url_for('alert.view_alert', alert_id=a.alert_id) }}" class="btn-glass-primary btn-sm py-1 px-3 text-decoration-none" style="font-size: 0.78rem;">
+                                    Triage Dossier
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="text-center py-4 text-muted">
+            <i class="fa-solid fa-bell-slash fs-3 mb-2 d-block"></i>
+            No active alerts are associated with this transaction.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

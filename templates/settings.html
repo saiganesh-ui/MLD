@@ -1,0 +1,553 @@
+{% extends 'base.html' %}
+{% block title %}Detection Engine & Weight Configuration — AML Analytics{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <h3 class="fw-bold mb-1 d-flex align-items-center gap-2">
+            <span class="brand-title"><i class="fa-solid fa-sliders text-primary me-2"></i>Detection Engine & Weight Configuration</span>
+        </h3>
+        <p class="text-secondary small mb-0">Tune transparent multi-factor risk scoring weights and rule detection thresholds</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <span class="glass-badge badge-blue" id="config-status-badge">
+            <i class="fa-solid fa-circle-check text-success"></i> Configuration: Active
+        </span>
+        <span class="glass-badge badge-cyan" id="config-timestamp-badge">
+            <i class="fa-solid fa-clock"></i> Loading...
+        </span>
+    </div>
+</div>
+
+<!-- Configuration Alert Container -->
+<div id="settings-alert-container"></div>
+
+<div class="row g-4">
+    <!-- Section A & B: Risk Engine Weights Configuration Card -->
+    <div class="col-lg-6">
+        <div class="glass-panel p-4 h-100 d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="fw-bold text-white mb-0 d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-scale-balanced text-warning"></i> Risk Engine Weights
+                </h5>
+                <span class="badge" id="total-weight-badge" style="font-size: 0.85rem;">
+                    Total: <span id="total-weight-display">100</span>%
+                </span>
+            </div>
+            <p class="text-secondary small mb-3">
+                Calibrate factor contributions in the composite 0–100 risk score calculation. Weights must sum to exactly 100%.
+            </p>
+
+            <!-- Visual Weight Distribution Stacked Bar -->
+            <div class="weights-distribution-bar" id="weights-bar">
+                <div class="weight-segment" id="seg-amount" style="width: 25%; background: #1677FF;" title="Amount Anomaly"></div>
+                <div class="weight-segment" id="seg-freq" style="width: 20%; background: #12D5EA;" title="Frequency Anomaly"></div>
+                <div class="weight-segment" id="seg-pattern" style="width: 25%; background: #A78BFA;" title="Transaction Pattern"></div>
+                <div class="weight-segment" id="seg-geo" style="width: 15%; background: #F5A623;" title="Geographic Factor"></div>
+                <div class="weight-segment" id="seg-ml" style="width: 15%; background: #18C98B;" title="ML / Anomaly Factor"></div>
+            </div>
+
+            <div class="d-flex justify-content-between text-muted mb-4" style="font-size: 0.68rem;">
+                <span style="color: #1677FF;"><i class="fa-solid fa-circle me-1" style="font-size: 0.5rem;"></i> Amount (25%)</span>
+                <span style="color: #12D5EA;"><i class="fa-solid fa-circle me-1" style="font-size: 0.5rem;"></i> Frequency (20%)</span>
+                <span style="color: #A78BFA;"><i class="fa-solid fa-circle me-1" style="font-size: 0.5rem;"></i> Pattern (25%)</span>
+                <span style="color: #F5A623;"><i class="fa-solid fa-circle me-1" style="font-size: 0.5rem;"></i> Geo (15%)</span>
+                <span style="color: #18C98B;"><i class="fa-solid fa-circle me-1" style="font-size: 0.5rem;"></i> ML (15%)</span>
+            </div>
+
+            <form id="weights-form" class="flex-grow-1 d-flex flex-column">
+                <!-- 1. Amount Anomaly -->
+                <div class="tuning-factor-row">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label class="form-label text-light small mb-0 fw-semibold">
+                            <i class="fa-solid fa-money-bill-wave text-primary me-1"></i> Amount Anomaly Weight
+                        </label>
+                        <span class="font-monospace fw-bold text-primary" id="val-amount">25%</span>
+                    </div>
+                    <div class="text-secondary mb-2" style="font-size: 0.72rem;">
+                        Penalizes transactions with amounts far exceeding standard baseline deviations or structural thresholds.
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <input type="range" class="form-range flex-grow-1" id="slider-amount" min="0" max="50" value="25">
+                        <input type="number" class="form-control form-control-sm text-center font-monospace" id="num-amount" min="0" max="50" value="25" style="width: 70px;">
+                    </div>
+                </div>
+
+                <!-- 2. Frequency Anomaly -->
+                <div class="tuning-factor-row">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label class="form-label text-light small mb-0 fw-semibold">
+                            <i class="fa-solid fa-clock-rotate-left text-cyan-accent me-1"></i> Frequency Anomaly Weight
+                        </label>
+                        <span class="font-monospace fw-bold text-cyan-accent" id="val-freq">20%</span>
+                    </div>
+                    <div class="text-secondary mb-2" style="font-size: 0.72rem;">
+                        Flags burst transfers or velocity surges in short rolling observation windows.
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <input type="range" class="form-range flex-grow-1" id="slider-freq" min="0" max="50" value="20">
+                        <input type="number" class="form-control form-control-sm text-center font-monospace" id="num-freq" min="0" max="50" value="20" style="width: 70px;">
+                    </div>
+                </div>
+
+                <!-- 3. Transaction Pattern Weight -->
+                <div class="tuning-factor-row">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label class="form-label text-light small mb-0 fw-semibold">
+                            <i class="fa-solid fa-shuffle text-purple me-1"></i> Transaction Pattern Weight
+                        </label>
+                        <span class="font-monospace fw-bold" style="color: #A78BFA;" id="val-pattern">25%</span>
+                    </div>
+                    <div class="text-secondary mb-2" style="font-size: 0.72rem;">
+                        Scoring contribution for detected structuring, circular loops, and rapid pass-through chains.
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <input type="range" class="form-range flex-grow-1" id="slider-pattern" min="0" max="50" value="25">
+                        <input type="number" class="form-control form-control-sm text-center font-monospace" id="num-pattern" min="0" max="50" value="25" style="width: 70px;">
+                    </div>
+                </div>
+
+                <!-- 4. Geographic Factor -->
+                <div class="tuning-factor-row">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label class="form-label text-light small mb-0 fw-semibold">
+                            <i class="fa-solid fa-earth-americas text-warning me-1"></i> Geographic Factor Weight
+                        </label>
+                        <span class="font-monospace fw-bold text-warning" id="val-geo">15%</span>
+                    </div>
+                    <div class="text-secondary mb-2" style="font-size: 0.72rem;">
+                        Impact of funds entering or leaving jurisdictions flagged as high-risk or tax secrecy havens.
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <input type="range" class="form-range flex-grow-1" id="slider-geo" min="0" max="50" value="15">
+                        <input type="number" class="form-control form-control-sm text-center font-monospace" id="num-geo" min="0" max="50" value="15" style="width: 70px;">
+                    </div>
+                </div>
+
+                <!-- 5. Historical / ML Behavior -->
+                <div class="tuning-factor-row">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label class="form-label text-light small mb-0 fw-semibold">
+                            <i class="fa-solid fa-robot text-success me-1"></i> Historical / ML Anomaly Weight
+                        </label>
+                        <span class="font-monospace fw-bold text-success" id="val-ml">15%</span>
+                    </div>
+                    <div class="text-secondary mb-2" style="font-size: 0.72rem;">
+                        Isolation Forest outlier anomaly score weighting and historical customer risk deviation.
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <input type="range" class="form-range flex-grow-1" id="slider-ml" min="0" max="50" value="15">
+                        <input type="number" class="form-control form-control-sm text-center font-monospace" id="num-ml" min="0" max="50" value="15" style="width: 70px;">
+                    </div>
+                </div>
+
+                <!-- Validation message area -->
+                <div id="weight-validation-msg" class="small mb-3 text-danger d-none">
+                    <i class="fa-solid fa-triangle-exclamation me-1"></i> Total weights must equal exactly 100%.
+                </div>
+
+                <div class="mt-auto pt-3 border-top border-secondary d-flex justify-content-between gap-2">
+                    <button type="button" id="btn-reset-weights" class="btn btn-glass-secondary">
+                        <i class="fa-solid fa-rotate-left me-1"></i> Reset to Defaults
+                    </button>
+                    <button type="submit" id="btn-save-weights" class="btn btn-glass-primary">
+                        <i class="fa-solid fa-floppy-disk me-1"></i> Save Risk Configuration
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Section C: Rule Engine Thresholds Configuration Card -->
+    <div class="col-lg-6">
+        <div class="glass-panel p-4 h-100 d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="fw-bold text-white mb-0 d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-ruler-combined text-cyan-accent"></i> Rule Engine Thresholds
+                </h5>
+                <span class="badge badge-cyan">Deterministic Rules</span>
+            </div>
+            <p class="text-secondary small mb-3">
+                Set cut-off parameters for large value anomalies, smurfing bands, velocity windows, and account dormancy.
+            </p>
+
+            <form id="thresholds-form" class="flex-grow-1 d-flex flex-column">
+                <!-- Large Transaction Threshold -->
+                <div class="threshold-card">
+                    <label class="form-label text-light small fw-semibold mb-1">
+                        <i class="fa-solid fa-dollar-sign text-success me-1"></i> Large Transaction Threshold ($)
+                    </label>
+                    <div class="text-secondary mb-2" style="font-size: 0.72rem;">
+                        Transactions at or above this monetary value trigger mandatory Large Value Anomaly checks.
+                    </div>
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        <input type="number" class="form-control font-monospace" id="thresh-large-tx" value="50000" min="1000" step="1000" required>
+                        <span class="input-group-text text-muted">USD</span>
+                    </div>
+                </div>
+
+                <!-- Structuring Band Range -->
+                <div class="threshold-card">
+                    <label class="form-label text-light small fw-semibold mb-1">
+                        <i class="fa-solid fa-layer-group text-warning me-1"></i> Structuring / Smurfing Band ($)
+                    </label>
+                    <div class="text-secondary mb-2" style="font-size: 0.72rem;">
+                        Amounts positioned just below standard $10,000 reporting requirements.
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">Min $</span>
+                                <input type="number" class="form-control font-monospace" id="thresh-struct-min" value="8000" min="100" step="100" required>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">Max $</span>
+                                <input type="number" class="form-control font-monospace" id="thresh-struct-max" value="9999" min="100" step="100" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- High Frequency Window -->
+                <div class="threshold-card">
+                    <label class="form-label text-light small fw-semibold mb-1">
+                        <i class="fa-solid fa-stopwatch text-cyan-accent me-1"></i> High Frequency Window (Hours)
+                    </label>
+                    <div class="text-secondary mb-2" style="font-size: 0.72rem;">
+                        Rolling lookback timeframe to detect burst transaction activity (> 5 transfers from one account).
+                    </div>
+                    <div class="input-group">
+                        <input type="number" class="form-control font-monospace" id="thresh-freq-window" value="24" min="1" max="168" required>
+                        <span class="input-group-text text-muted">Hours</span>
+                    </div>
+                </div>
+
+                <!-- Rapid Transfer Window -->
+                <div class="threshold-card">
+                    <label class="form-label text-light small fw-semibold mb-1">
+                        <i class="fa-solid fa-bolt text-danger me-1"></i> Rapid Pass-Through Window (Hours)
+                    </label>
+                    <div class="text-secondary mb-2" style="font-size: 0.72rem;">
+                        Elapsed time within which accounts that receive and immediately forward funds are flagged.
+                    </div>
+                    <div class="input-group">
+                        <input type="number" class="form-control font-monospace" id="thresh-rapid-window" value="6" min="1" max="72" required>
+                        <span class="input-group-text text-muted">Hours</span>
+                    </div>
+                </div>
+
+                <!-- Dormant Account Inactivity -->
+                <div class="threshold-card">
+                    <label class="form-label text-light small fw-semibold mb-1">
+                        <i class="fa-solid fa-moon text-primary me-1"></i> Dormant Account Threshold (Days)
+                    </label>
+                    <div class="text-secondary mb-2" style="font-size: 0.72rem;">
+                        Period of zero activity prior to sudden large transfers triggering Dormant Spike alerts.
+                    </div>
+                    <div class="input-group">
+                        <input type="number" class="form-control font-monospace" id="thresh-dormant-days" value="90" min="30" max="365" required>
+                        <span class="input-group-text text-muted">Days</span>
+                    </div>
+                </div>
+
+                <!-- Academic Research Disclaimer -->
+                <div class="p-3 rounded mb-3" style="background: rgba(11, 20, 37, 0.4); border: 1px solid var(--border-color); font-size: 0.75rem;">
+                    <i class="fa-solid fa-shield-halved text-cyan me-1"></i>
+                    <span class="text-muted">These academic research example thresholds are for experimental analysis and do not constitute official statutory limits.</span>
+                </div>
+
+                <div class="mt-auto pt-3 border-top border-secondary d-flex justify-content-between gap-2">
+                    <button type="button" id="btn-reset-thresholds" class="btn btn-glass-secondary">
+                        <i class="fa-solid fa-rotate-left me-1"></i> Reset Thresholds
+                    </button>
+                    <button type="submit" id="btn-save-thresholds" class="btn btn-glass-cyan">
+                        <i class="fa-solid fa-floppy-disk me-1"></i> Save Thresholds
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const alertContainer = document.getElementById('settings-alert-container');
+    const timestampBadge = document.getElementById('config-timestamp-badge');
+    const statusBadge = document.getElementById('config-status-badge');
+
+    // Factors mapping
+    const factors = ['amount', 'freq', 'pattern', 'geo', 'ml'];
+    const factorBackendKeys = {
+        'amount': 'amount_anomaly',
+        'freq': 'frequency_anomaly',
+        'pattern': 'transaction_pattern',
+        'geo': 'geographic_factor',
+        'ml': 'historical_behavior'
+    };
+
+    // Thresholds mapping
+    const threshElements = {
+        large_tx: document.getElementById('thresh-large-tx'),
+        struct_min: document.getElementById('thresh-struct-min'),
+        struct_max: document.getElementById('thresh-struct-max'),
+        freq_window: document.getElementById('thresh-freq-window'),
+        rapid_window: document.getElementById('thresh-rapid-window'),
+        dormant_days: document.getElementById('thresh-dormant-days')
+    };
+
+    // Load initial settings from backend API
+    fetchSettings();
+
+    function fetchSettings() {
+        fetch('/api/settings')
+            .then(r => r.json())
+            .then(data => {
+                if (data.weights) {
+                    setWeightsUI(data.weights);
+                }
+                if (data.thresholds) {
+                    setThresholdsUI(data.thresholds);
+                }
+                if (data.last_updated) {
+                    timestampBadge.innerHTML = `<i class="fa-solid fa-clock"></i> ${data.last_updated}`;
+                }
+                markSavedStatus();
+            })
+            .catch(err => {
+                console.error('Error fetching settings:', err);
+                timestampBadge.innerHTML = '<i class="fa-solid fa-clock"></i> Default Config';
+            });
+    }
+
+    function setWeightsUI(weights) {
+        document.getElementById('slider-amount').value = weights.amount_anomaly ?? 25;
+        document.getElementById('num-amount').value = weights.amount_anomaly ?? 25;
+
+        document.getElementById('slider-freq').value = weights.frequency_anomaly ?? 20;
+        document.getElementById('num-freq').value = weights.frequency_anomaly ?? 20;
+
+        document.getElementById('slider-pattern').value = weights.transaction_pattern ?? 25;
+        document.getElementById('num-pattern').value = weights.transaction_pattern ?? 25;
+
+        document.getElementById('slider-geo').value = weights.geographic_factor ?? 15;
+        document.getElementById('num-geo').value = weights.geographic_factor ?? 15;
+
+        document.getElementById('slider-ml').value = weights.historical_behavior ?? 15;
+        document.getElementById('num-ml').value = weights.historical_behavior ?? 15;
+
+        recalculateWeights();
+    }
+
+    function setThresholdsUI(th) {
+        if (th.large_transaction !== undefined) threshElements.large_tx.value = th.large_transaction;
+        if (th.structuring_min !== undefined) threshElements.struct_min.value = th.structuring_min;
+        if (th.structuring_max !== undefined) threshElements.struct_max.value = th.structuring_max;
+        if (th.frequency_window !== undefined) threshElements.freq_window.value = th.frequency_window;
+        if (th.rapid_transfer_window !== undefined) threshElements.rapid_window.value = th.rapid_transfer_window;
+        if (th.dormant_days !== undefined) threshElements.dormant_days.value = th.dormant_days;
+    }
+
+    // Sync sliders and number inputs
+    factors.forEach(f => {
+        const slider = document.getElementById(`slider-${f}`);
+        const num = document.getElementById(`num-${f}`);
+
+        slider.addEventListener('input', function() {
+            num.value = this.value;
+            recalculateWeights();
+            markUnsavedStatus();
+        });
+
+        num.addEventListener('input', function() {
+            slider.value = this.value;
+            recalculateWeights();
+            markUnsavedStatus();
+        });
+    });
+
+    Object.values(threshElements).forEach(el => {
+        el.addEventListener('input', () => markUnsavedStatus());
+    });
+
+    function recalculateWeights() {
+        let total = 0;
+        const vals = {};
+
+        factors.forEach(f => {
+            const val = parseFloat(document.getElementById(`num-${f}`).value) || 0;
+            vals[f] = val;
+            total += val;
+            document.getElementById(`val-${f}`).innerText = `${val}%`;
+        });
+
+        total = Math.round(total * 10) / 10;
+        document.getElementById('total-weight-display').innerText = total;
+
+        const totalBadge = document.getElementById('total-weight-badge');
+        const validationMsg = document.getElementById('weight-validation-msg');
+        const saveWeightsBtn = document.getElementById('btn-save-weights');
+
+        // Update distribution bar segments
+        factors.forEach(f => {
+            const seg = document.getElementById(`seg-${f}`);
+            const pct = total > 0 ? (vals[f] / total) * 100 : 0;
+            seg.style.width = `${pct}%`;
+        });
+
+        if (total === 100) {
+            totalBadge.className = 'badge badge-low';
+            validationMsg.classList.add('d-none');
+            saveWeightsBtn.disabled = false;
+        } else {
+            totalBadge.className = 'badge badge-high';
+            validationMsg.classList.remove('d-none');
+            validationMsg.innerHTML = `<i class="fa-solid fa-triangle-exclamation me-1"></i> Total must equal exactly 100% (Current sum: ${total}%). Difference: ${100 - total}%.`;
+            saveWeightsBtn.disabled = true;
+        }
+    }
+
+    function markUnsavedStatus() {
+        statusBadge.className = 'glass-badge badge-medium';
+        statusBadge.innerHTML = '<i class="fa-solid fa-circle-dot text-warning"></i> Unsaved Changes';
+    }
+
+    function markSavedStatus() {
+        statusBadge.className = 'glass-badge badge-blue';
+        statusBadge.innerHTML = '<i class="fa-solid fa-circle-check text-success"></i> Configuration: Active';
+    }
+
+    function showNotification(msg, isSuccess = true) {
+        alertContainer.innerHTML = `
+            <div class="glass-panel p-3 mb-4 d-flex align-items-center justify-content-between" style="background: rgba(16, 28, 48, 0.95); border-left: 4px solid ${isSuccess ? 'var(--success-emerald)' : 'var(--critical-red)'}; animation: fadeSlideIn 0.3s ease-out;">
+                <div class="d-flex align-items-center gap-2 small text-white">
+                    <i class="fa-solid ${isSuccess ? 'fa-circle-check text-success' : 'fa-triangle-exclamation text-danger'} fs-5"></i>
+                    <span>${msg}</span>
+                </div>
+                <button type="button" class="btn-close btn-close-white ms-3" onclick="this.parentElement.remove()"></button>
+            </div>
+        `;
+    }
+
+    // Save Risk Weights Form Submit
+    document.getElementById('weights-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const weightsPayload = {};
+        factors.forEach(f => {
+            weightsPayload[factorBackendKeys[f]] = parseFloat(document.getElementById(`num-${f}`).value);
+        });
+
+        const btn = document.getElementById('btn-save-weights');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Saving Weights...';
+
+        fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ weights: weightsPayload })
+        })
+        .then(r => r.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-floppy-disk me-1"></i> Save Risk Configuration';
+
+            if (data.success) {
+                showNotification(data.message, true);
+                if (data.last_updated) {
+                    timestampBadge.innerHTML = `<i class="fa-solid fa-clock"></i> ${data.last_updated}`;
+                }
+                markSavedStatus();
+            } else {
+                showNotification(data.error || 'Failed to update weights.', false);
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-floppy-disk me-1"></i> Save Risk Configuration';
+            showNotification('Server error communicating with configuration engine.', false);
+        });
+    });
+
+    // Save Rule Thresholds Form Submit
+    document.getElementById('thresholds-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const sMin = parseFloat(threshElements.struct_min.value);
+        const sMax = parseFloat(threshElements.struct_max.value);
+
+        if (sMin >= sMax) {
+            showNotification('Structuring Minimum ($' + sMin + ') must be strictly less than Structuring Maximum ($' + sMax + ').', false);
+            return;
+        }
+
+        const threshPayload = {
+            large_transaction: parseFloat(threshElements.large_tx.value),
+            structuring_min: sMin,
+            structuring_max: sMax,
+            frequency_window: parseInt(threshElements.freq_window.value),
+            rapid_transfer_window: parseInt(threshElements.rapid_window.value),
+            dormant_days: parseInt(threshElements.dormant_days.value)
+        };
+
+        const btn = document.getElementById('btn-save-thresholds');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Saving Thresholds...';
+
+        fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ thresholds: threshPayload })
+        })
+        .then(r => r.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-floppy-disk me-1"></i> Save Thresholds';
+
+            if (data.success) {
+                showNotification(data.message, true);
+                if (data.last_updated) {
+                    timestampBadge.innerHTML = `<i class="fa-solid fa-clock"></i> ${data.last_updated}`;
+                }
+                markSavedStatus();
+            } else {
+                showNotification(data.error || 'Failed to update thresholds.', false);
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-floppy-disk me-1"></i> Save Thresholds';
+            showNotification('Server error saving rule thresholds.', false);
+        });
+    });
+
+    // Reset Buttons
+    document.getElementById('btn-reset-weights').addEventListener('click', function() {
+        setWeightsUI({
+            amount_anomaly: 25,
+            frequency_anomaly: 20,
+            transaction_pattern: 25,
+            geographic_factor: 15,
+            historical_behavior: 15
+        });
+        markUnsavedStatus();
+    });
+
+    document.getElementById('btn-reset-thresholds').addEventListener('click', function() {
+        setThresholdsUI({
+            large_transaction: 50000,
+            structuring_min: 8000,
+            structuring_max: 9999,
+            frequency_window: 24,
+            rapid_transfer_window: 6,
+            dormant_days: 90
+        });
+        markUnsavedStatus();
+    });
+});
+</script>
+{% endblock %}

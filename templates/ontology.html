@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+{% block title %}Ontology & Knowledge Graph Explorer — AML Analytics{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <h3 class="fw-bold mb-1 d-flex align-items-center gap-2">
+            <span class="brand-title"><i class="fa-solid fa-diagram-project text-primary me-2"></i>Ontology & Knowledge Graph Explorer</span>
+        </h3>
+        <p class="text-secondary small mb-0">Explore MoneyLaunderingDetectionOntology classes, RDF triples, and semantic node relationships</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <span class="glass-badge badge-blue">
+            <i class="fa-solid fa-cube text-cyan"></i> Protégé OWL 2 / RDFLib
+        </span>
+        <span class="glass-badge badge-cyan" id="graph-node-count-badge">
+            <i class="fa-solid fa-circle-nodes"></i> Loading Triples...
+        </span>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- OWL Ontology Classes Panel -->
+    <div class="col-lg-4">
+        <div class="glass-panel p-4 h-100 d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-light mb-0 d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-sitemap text-cyan-accent"></i> OWL Ontology Classes
+                </h5>
+                <span class="badge badge-cyan" id="classes-count-badge">19 Classes</span>
+            </div>
+
+            <!-- Search Ontology Classes -->
+            <div class="mb-3">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input type="text" id="class-search-input" class="form-control" placeholder="Search ontology class...">
+                </div>
+            </div>
+
+            <p class="text-secondary small mb-2">MoneyLaunderingDetectionOntology taxonomy hierarchy:</p>
+
+            <div id="ontology-classes-list" class="flex-grow-1" style="max-height: 620px; overflow-y: auto; padding-right: 4px;">
+                <div class="text-secondary py-4 text-center">
+                    <i class="fa-solid fa-spinner fa-spin me-2"></i>Loading ontology taxonomy...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive Knowledge Graph Visualizer -->
+    <div class="col-lg-8">
+        <div class="glass-panel p-4 h-100 d-flex flex-column">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                <div>
+                    <h5 class="fw-bold text-light mb-0 d-flex align-items-center gap-2">
+                        <i class="fa-solid fa-circle-nodes text-warning"></i> Semantic Knowledge Graph Visualizer
+                    </h5>
+                    <span class="text-muted small">Live RDF triples & entity relationships in SQLite database</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <select id="select-graph-limit" class="form-select form-select-sm py-1 px-2" style="width: auto;">
+                        <option value="35">35 Nodes</option>
+                        <option value="60" selected>60 Nodes</option>
+                        <option value="100">100 Nodes</option>
+                        <option value="150">150 Nodes</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Graph Controls Toolbar -->
+            <div class="graph-control-toolbar">
+                <div class="d-flex align-items-center gap-1">
+                    <button id="btn-zoom-in" class="btn btn-sm btn-glass-secondary" title="Zoom In">
+                        <i class="fa-solid fa-magnifying-glass-plus"></i>
+                    </button>
+                    <button id="btn-zoom-out" class="btn btn-sm btn-glass-secondary" title="Zoom Out">
+                        <i class="fa-solid fa-magnifying-glass-minus"></i>
+                    </button>
+                    <button id="btn-fit-graph" class="btn btn-sm btn-glass-secondary" title="Fit to Screen">
+                        <i class="fa-solid fa-expand"></i> Fit
+                    </button>
+                    <button id="btn-reload-graph" class="btn btn-sm btn-glass-primary" title="Reset View">
+                        <i class="fa-solid fa-rotate me-1"></i> Reset View
+                    </button>
+                </div>
+
+                <div class="vr bg-secondary mx-1 d-none d-sm-block" style="height: 24px; opacity: 0.3;"></div>
+
+                <!-- Entity Filter -->
+                <div class="d-flex align-items-center gap-2 flex-grow-1">
+                    <select id="filter-entity-type" class="form-select form-select-sm" style="min-width: 150px;">
+                        <option value="All">All Entity Types</option>
+                        <option value="Customer">Customer</option>
+                        <option value="Account">Account</option>
+                        <option value="Transaction">Transaction (Normal)</option>
+                        <option value="SuspiciousTransaction">Suspicious Transaction</option>
+                        <option value="Alert">Alerts</option>
+                        <option value="RiskLevel">Risk Level</option>
+                        <option value="Pattern">Pattern Typology</option>
+                        <option value="Country">Country</option>
+                    </select>
+
+                    <div class="input-group input-group-sm flex-grow-1" style="min-width: 160px;">
+                        <span class="input-group-text"><i class="fa-solid fa-search"></i></span>
+                        <input type="text" id="graph-search-node" class="form-control" placeholder="Find node in graph...">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vis.js Network Canvas Container -->
+            <div class="position-relative">
+                <div id="mynetwork"></div>
+                <div id="graph-loading-overlay" class="position-absolute top-0 start-0 w-100 h-100 d-none justify-content-center align-items-center" style="background: rgba(7, 13, 25, 0.7); backdrop-filter: blur(4px); border-radius: 12px; z-index: 5;">
+                    <div class="text-center text-white">
+                        <i class="fa-solid fa-spinner fa-spin display-5 text-cyan-accent mb-2"></i>
+                        <div class="fw-semibold small">Querying Semantic Graph...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Graph Legend Bar -->
+            <div class="graph-legend-bar">
+                <span class="text-white fw-bold me-2"><i class="fa-solid fa-tags me-1 text-cyan-accent"></i> Legend:</span>
+                <span class="legend-item"><span class="legend-dot" style="background: #1677FF;"></span> Customer</span>
+                <span class="legend-item"><span class="legend-dot" style="background: #12D5EA;"></span> Account</span>
+                <span class="legend-item"><span class="legend-dot" style="background: #18C98B;"></span> Transaction</span>
+                <span class="legend-item"><span class="legend-dot" style="background: #FF526A;"></span> Suspicious Tx</span>
+                <span class="legend-item"><span class="legend-dot" style="background: #FF526A; box-shadow: 0 0 6px #FF526A;"></span> Alert</span>
+                <span class="legend-item"><span class="legend-dot" style="background: #F5A623;"></span> Risk Level</span>
+                <span class="legend-item"><span class="legend-dot" style="background: #A78BFA;"></span> Pattern</span>
+                <span class="legend-item"><span class="legend-dot" style="background: #6366F1;"></span> Country</span>
+            </div>
+
+            <!-- Node Details Panel -->
+            <div class="node-detail-card mt-3" id="node-detail-panel">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="fw-bold text-light small d-flex align-items-center gap-2">
+                        <i class="fa-solid fa-circle-info text-cyan-accent"></i> Selected Node Forensic Inspector
+                    </div>
+                    <span class="text-muted small">Click any node in graph to inspect properties</span>
+                </div>
+                <div class="text-secondary small" id="node-detail-content">
+                    <i class="fa-solid fa-arrow-pointer me-1 text-cyan-accent"></i> Select any node to display RDF properties, data attributes, risk level, and connected entities.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/ontology.js') }}"></script>
+{% endblock %}

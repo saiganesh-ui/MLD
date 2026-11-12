@@ -1,0 +1,11 @@
+Flask
+Flask-SQLAlchemy
+Werkzeug
+owlready2
+rdflib
+pandas
+numpy
+scikit-learn
+reportlab
+pytest
+python-dotenv

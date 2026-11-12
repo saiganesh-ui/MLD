@@ -1,0 +1,215 @@
+{% extends 'base.html' %}
+{% block title %}Customer Dossier — {{ customer.name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <a href="{{ url_for('customer.list_customers') }}" class="btn-glass-secondary btn-sm mb-2 d-inline-flex align-items-center gap-1 text-decoration-none">
+            <i class="fa-solid fa-arrow-left"></i> Back to Directory
+        </a>
+        <h3 class="fw-bold mb-1 brand-title d-flex align-items-center gap-2">
+            Entity Profile: {{ customer.name }}
+        </h3>
+        <p class="text-secondary small mb-0">Customer ID: <code>{{ customer.customer_id }}</code> • Jurisdiction: {{ customer.country }}</p>
+    </div>
+    <a href="{{ url_for('report.download_customer_pdf', cust_id=customer.customer_id) }}" class="btn btn-glass-cyan text-decoration-none">
+        <i class="fa-solid fa-file-pdf me-1"></i> Export Regulatory PDF Dossier
+    </a>
+</div>
+
+<!-- Key Stat Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="kpi-card" style="--card-accent: {% if customer.risk_score >= 71 %}var(--critical-red){% elif customer.risk_score >= 31 %}var(--warning-amber){% else %}var(--success-emerald){% endif %};">
+            <div class="kpi-header">
+                <span class="kpi-label">Customer Risk Rating</span>
+                <div class="kpi-icon-wrap text-primary">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+            </div>
+            <div class="kpi-value {% if customer.risk_score >= 71 %}text-danger{% elif customer.risk_score >= 31 %}text-warning{% else %}text-success{% endif %}">
+                {{ customer.risk_score }} <small class="fs-6 text-muted">({{ customer.risk_level }})</small>
+            </div>
+            <div class="kpi-footer">
+                <i class="fa-solid fa-scale-balanced text-primary"></i>
+                <span>Aggregate Customer Risk Index</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="kpi-card" style="--card-accent: var(--success-emerald);">
+            <div class="kpi-header">
+                <span class="kpi-label">Cumulative Volume</span>
+                <div class="kpi-icon-wrap text-success">
+                    <i class="fa-solid fa-vault"></i>
+                </div>
+            </div>
+            <div class="kpi-value text-white">
+                ${{ "{:,.2f}".format(total_volume) }}
+            </div>
+            <div class="kpi-footer">
+                <i class="fa-solid fa-arrow-trend-up text-success"></i>
+                <span>All Associated Inbound & Outbound</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="kpi-card" style="--card-accent: var(--bright-blue);">
+            <div class="kpi-header">
+                <span class="kpi-label">Mean Transaction</span>
+                <div class="kpi-icon-wrap text-primary">
+                    <i class="fa-solid fa-calculator"></i>
+                </div>
+            </div>
+            <div class="kpi-value text-cyan-accent" style="color: var(--cyan-accent);">
+                ${{ "{:,.2f}".format(avg_tx) }}
+            </div>
+            <div class="kpi-footer">
+                <i class="fa-solid fa-chart-line text-cyan"></i>
+                <span>Average Transfer Size</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="kpi-card" style="--card-accent: var(--warning-amber);">
+            <div class="kpi-header">
+                <span class="kpi-label">Counterparties</span>
+                <div class="kpi-icon-wrap text-warning">
+                    <i class="fa-solid fa-network-wired"></i>
+                </div>
+            </div>
+            <div class="kpi-value text-warning">
+                {{ counterparty_count }}
+            </div>
+            <div class="kpi-footer">
+                <i class="fa-solid fa-arrows-split-up-and-left text-warning"></i>
+                <span>Distinct Transfer Partners</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Fintech Digital Accounts Grid -->
+    <div class="col-lg-5">
+        <div class="glass-panel p-4 h-100">
+            <h5 class="fw-bold text-white mb-3 d-flex align-items-center gap-2">
+                <i class="fa-solid fa-credit-card text-cyan-accent" style="color: var(--cyan-accent);"></i> Controlled Financial Accounts ({{ accounts | length }})
+            </h5>
+            
+            <div class="d-flex flex-column gap-3">
+                {% for acc in accounts %}
+                    <div class="p-3 rounded position-relative overflow-hidden" style="background: linear-gradient(135deg, rgba(21, 33, 54, 0.8) 0%, rgba(11, 18, 32, 0.9) 100%); border: 1px solid var(--glass-border); box-shadow: var(--glass-inner-glow);">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <span class="glass-badge badge-blue mb-1" style="font-size: 0.7rem;">{{ acc.account_type }}</span>
+                                <div class="font-monospace text-white fw-bold fs-6 mt-1">{{ acc.account_number }}</div>
+                            </div>
+                            <i class="fa-solid fa-sim-card fs-3 text-cyan-accent opacity-50" style="color: var(--cyan-accent);"></i>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-end mt-2 pt-2 border-top border-secondary" style="border-color: rgba(148, 163, 184, 0.1) !important;">
+                            <span class="text-muted small"><i class="fa-solid fa-location-dot me-1"></i>{{ acc.country }}</span>
+                            <div class="text-end">
+                                <span class="text-muted small" style="font-size: 0.7rem;">BALANCE</span>
+                                <div class="fw-bold font-monospace text-success fs-6">${{ "{:,.2f}".format(acc.balance) }}</div>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4 text-muted">No accounts registered under this customer entity.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Risk History Timeline -->
+    <div class="col-lg-7">
+        <div class="glass-panel p-4 h-100">
+            <h5 class="fw-bold text-white mb-3 d-flex align-items-center gap-2">
+                <i class="fa-solid fa-timeline text-warning"></i> Risk Evaluation Chronology
+            </h5>
+            
+            <div class="table-responsive">
+                <table class="glass-table">
+                    <thead>
+                        <tr>
+                            <th>Evaluation Time</th>
+                            <th>Rating</th>
+                            <th>Tier</th>
+                            <th>Reasoning Context</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rh in risk_history %}
+                            <tr>
+                                <td><span class="font-monospace text-muted small">{{ rh.timestamp.strftime('%Y-%m-%d %H:%M') }}</span></td>
+                                <td class="fw-bold font-monospace text-white">{{ rh.risk_score }}</td>
+                                <td>
+                                    <span class="glass-badge {% if rh.risk_level == 'High' %}badge-high{% elif rh.risk_level == 'Medium' %}badge-medium{% else %}badge-low{% endif %}">
+                                        {{ rh.risk_level }}
+                                    </span>
+                                </td>
+                                <td><small class="text-secondary">{{ rh.reason }}</small></td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="4" class="text-center text-muted py-4">No risk history changes on record.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Customer Transactions Ledger -->
+<div class="glass-panel p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold text-white mb-0 d-flex align-items-center gap-2">
+            <i class="fa-solid fa-receipt text-primary"></i> Transaction Ledger ({{ transactions | length }})
+        </h5>
+        <span class="glass-badge badge-blue">Historical Activity</span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="glass-table">
+            <thead>
+                <tr>
+                    <th>Tx ID</th>
+                    <th>Sender</th>
+                    <th>Receiver</th>
+                    <th>Amount</th>
+                    <th>Type</th>
+                    <th>Risk Score</th>
+                    <th>Forensic Dossier</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in transactions[:20] %}
+                    <tr>
+                        <td><code>{{ t.transaction_id }}</code></td>
+                        <td><span class="font-monospace text-secondary">{{ t.sender_account }}</span></td>
+                        <td><span class="font-monospace text-secondary">{{ t.receiver_account }}</span></td>
+                        <td class="fw-bold font-monospace text-white">${{ "{:,.2f}".format(t.amount) }}</td>
+                        <td><span class="glass-badge badge-blue">{{ t.transaction_type }}</span></td>
+                        <td>
+                            <span class="glass-badge {% if t.risk_level == 'High' %}badge-high{% elif t.risk_level == 'Medium' %}badge-medium{% else %}badge-low{% endif %}">
+                                {{ t.risk_score }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('transaction.view_transaction', tx_id=t.transaction_id) }}" class="btn-glass-primary btn-sm py-1 px-3 text-decoration-none" style="font-size: 0.78rem;">
+                                Investigate
+                            </a>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="7" class="text-center text-muted py-4">No transaction activity recorded.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

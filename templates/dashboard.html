@@ -1,0 +1,262 @@
+{% extends 'base.html' %}
+{% block title %}Executive Intelligence Dashboard — AML Analytics{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <h3 class="fw-bold mb-1 d-flex align-items-center gap-2">
+            <span class="brand-title">Financial Crime Intelligence Dashboard</span>
+        </h3>
+        <p class="text-secondary small mb-0">Multi-engine reasoning metrics & ontology telemetry</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <span class="glass-badge badge-cyan d-none d-sm-inline-flex">
+            <i class="fa-solid fa-bolt"></i> Live Stream Active
+        </span>
+        <button class="btn btn-glass-primary btn-sm" id="btn-refresh">
+            <i class="fa-solid fa-arrows-rotate me-1"></i> Refresh Telemetry
+        </button>
+    </div>
+</div>
+
+<!-- 7 Executive Glassmorphic KPI Cards -->
+<div class="row g-3 mb-4">
+    <!-- Total Customers -->
+    <div class="col-xl-3 col-md-6">
+        <div class="kpi-card" style="--card-accent: var(--primary-blue);">
+            <div class="kpi-header">
+                <span class="kpi-label">Monitored Customers</span>
+                <div class="kpi-icon-wrap text-primary">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+            </div>
+            <div class="kpi-value text-white" id="stat-customers">...</div>
+            <div class="kpi-footer">
+                <i class="fa-solid fa-diagram-project text-cyan"></i>
+                <span>Ontology Class: Customer</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Accounts -->
+    <div class="col-xl-3 col-md-6">
+        <div class="kpi-card" style="--card-accent: var(--cyan-accent);">
+            <div class="kpi-header">
+                <span class="kpi-label">Active Accounts</span>
+                <div class="kpi-icon-wrap text-cyan-accent" style="color: var(--cyan-accent);">
+                    <i class="fa-solid fa-building-columns"></i>
+                </div>
+            </div>
+            <div class="kpi-value text-white" id="stat-accounts">...</div>
+            <div class="kpi-footer">
+                <i class="fa-solid fa-link text-primary"></i>
+                <span>Relation: ownsAccount</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Transactions -->
+    <div class="col-xl-3 col-md-6">
+        <div class="kpi-card" style="--card-accent: var(--success-emerald);">
+            <div class="kpi-header">
+                <span class="kpi-label">Total Transactions</span>
+                <div class="kpi-icon-wrap" style="color: var(--success-emerald);">
+                    <i class="fa-solid fa-money-bill-transfer"></i>
+                </div>
+            </div>
+            <div class="kpi-value text-white" id="stat-transactions">...</div>
+            <div class="kpi-footer">
+                <i class="fa-solid fa-arrow-trend-up text-success"></i>
+                <span>Financial Transaction Stream</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Suspicious Transactions -->
+    <div class="col-xl-3 col-md-6">
+        <div class="kpi-card" style="--card-accent: var(--warning-amber);">
+            <div class="kpi-header">
+                <span class="kpi-label">Potentially Suspicious</span>
+                <div class="kpi-icon-wrap text-warning">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+            </div>
+            <div class="kpi-value text-warning" id="stat-suspicious">...</div>
+            <div class="kpi-footer">
+                <i class="fa-solid fa-filter text-warning"></i>
+                <span>Flagged by Rule & ML Engine</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Open Alerts -->
+    <div class="col-xl-4 col-md-6">
+        <div class="kpi-card" style="--card-accent: var(--critical-red);">
+            <div class="kpi-header">
+                <span class="kpi-label">Open Alerts Queue</span>
+                <div class="kpi-icon-wrap" style="color: var(--critical-red);">
+                    <i class="fa-solid fa-bell"></i>
+                </div>
+            </div>
+            <div class="kpi-value" style="color: var(--critical-red);" id="stat-alerts">...</div>
+            <div class="kpi-footer">
+                <i class="fa-solid fa-clock text-danger"></i>
+                <span>Awaiting Analyst Triage</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- High Risk Customers -->
+    <div class="col-xl-4 col-md-6">
+        <div class="kpi-card" style="--card-accent: var(--critical-red);">
+            <div class="kpi-header">
+                <span class="kpi-label">High-Risk Customers</span>
+                <div class="kpi-icon-wrap" style="color: var(--critical-red);">
+                    <i class="fa-solid fa-user-shield"></i>
+                </div>
+            </div>
+            <div class="kpi-value" style="color: var(--critical-red);" id="stat-high-risk-cust">...</div>
+            <div class="kpi-footer">
+                <i class="fa-solid fa-triangle-exclamation text-danger"></i>
+                <span>Score Threshold >= 71</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Average Risk Score -->
+    <div class="col-xl-4 col-md-12">
+        <div class="kpi-card" style="--card-accent: var(--bright-blue);">
+            <div class="kpi-header">
+                <span class="kpi-label">System Average Risk</span>
+                <div class="kpi-icon-wrap text-primary">
+                    <i class="fa-solid fa-gauge-high"></i>
+                </div>
+            </div>
+            <div class="kpi-value text-cyan-accent" style="color: var(--cyan-accent);" id="stat-avg-score">...</div>
+            <div class="kpi-footer">
+                <i class="fa-solid fa-scale-balanced text-primary"></i>
+                <span>Transparent Composite 0–100 Scale</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 7 Interactive Charts Section -->
+<div class="row g-4 mb-4">
+    <!-- Chart 1: Activity Timeline -->
+    <div class="col-lg-8 col-12">
+        <div class="glass-panel p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold mb-0 text-white d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-chart-area text-primary"></i> Transaction Volume & Suspicious Spikes Over Time
+                </h6>
+                <span class="glass-badge badge-blue">30-Day Rolling Analysis</span>
+            </div>
+            <div style="height: 290px;">
+                <canvas id="chart-timeline"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 2: Suspicious vs Normal Breakdown -->
+    <div class="col-lg-4 col-12">
+        <div class="glass-panel p-4 h-100">
+            <h6 class="fw-bold mb-3 text-white d-flex align-items-center gap-2">
+                <i class="fa-solid fa-chart-pie text-cyan-accent" style="color: var(--cyan-accent);"></i> Transaction Cleanliness Ratio
+            </h6>
+            <div style="height: 250px;" class="d-flex align-items-center justify-content-center">
+                <canvas id="chart-suspicious-pie"></canvas>
+            </div>
+            <div class="text-center mt-2 small text-muted">
+                Normal vs Potentially Flagged Transactions
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Chart 3: Customer Risk Distribution -->
+    <div class="col-md-4">
+        <div class="glass-panel p-4 h-100">
+            <h6 class="fw-bold mb-3 text-white d-flex align-items-center gap-2">
+                <i class="fa-solid fa-pie-chart text-warning"></i> Customer Risk Distribution
+            </h6>
+            <div style="height: 240px;" class="d-flex align-items-center justify-content-center">
+                <canvas id="chart-risk-dist"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 4: Alert Severity Distribution -->
+    <div class="col-md-4">
+        <div class="glass-panel p-4 h-100">
+            <h6 class="fw-bold mb-3 text-white d-flex align-items-center gap-2">
+                <i class="fa-solid fa-chart-column text-danger"></i> Alert Severity Tiers
+            </h6>
+            <div style="height: 240px;">
+                <canvas id="chart-alert-severity"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 5: Transaction Type Breakdown -->
+    <div class="col-md-4">
+        <div class="glass-panel p-4 h-100">
+            <h6 class="fw-bold mb-3 text-white d-flex align-items-center gap-2">
+                <i class="fa-solid fa-layer-group text-success"></i> Channel / Type Topology
+            </h6>
+            <div style="height: 240px;">
+                <canvas id="chart-tx-types"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Chart 6: Country-Wise Activity -->
+    <div class="col-lg-6">
+        <div class="glass-panel p-4 h-100">
+            <h6 class="fw-bold mb-3 text-white d-flex align-items-center gap-2">
+                <i class="fa-solid fa-globe text-primary"></i> Top Jurisdiction Activity
+            </h6>
+            <div style="height: 260px;">
+                <canvas id="chart-countries"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 7: Top Risky Customers Table -->
+    <div class="col-lg-6">
+        <div class="glass-panel p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold mb-0 text-white d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-users-viewfinder text-danger"></i> High-Risk Customer Watchlist
+                </h6>
+                <a href="{{ url_for('customer.list_customers') }}" class="btn-glass-secondary btn-sm text-decoration-none py-1 px-2" style="font-size: 0.75rem;">
+                    View All Directory &rarr;
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="glass-table">
+                    <thead>
+                        <tr>
+                            <th>Entity ID</th>
+                            <th>Name</th>
+                            <th>Jurisdiction</th>
+                            <th>Risk Score</th>
+                            <th>Investigation</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbl-top-customers">
+                        <tr><td colspan="5" class="text-center text-muted py-4"><i class="fa-solid fa-spinner fa-spin me-2"></i>Loading watchlist...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,6 @@
+transaction_id,sender_account,receiver_account,amount,currency,transaction_type,transaction_date,sender_country,receiver_country,description
+TXN-90001,ACC100001,ACC100002,1250.00,USD,WIRE,2026-10-01 10:15:00,United States,United States,Consulting Payment
+TXN-90002,ACC100003,ACC100004,9500.00,USD,WIRE,2026-10-01 11:00:00,United States,Panama,Structured transfer sample 1
+TXN-90003,ACC100003,ACC100005,9200.00,USD,WIRE,2026-10-01 11:20:00,United States,Panama,Structured transfer sample 2
+TXN-90004,ACC100006,ACC100007,150000.00,USD,WIRE,2026-10-02 14:30:00,Cayman Islands,United States,Offshore investment capital
+TXN-90005,ACC100008,ACC100009,450.00,USD,ACH,2026-10-02 16:45:00,United Kingdom,Germany,Utility reimbursement

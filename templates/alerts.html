@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% block title %}Compliance Alerts Queue — AML Analytics{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+        <h3 class="fw-bold mb-1 brand-title">Compliance Alerts Triage Queue</h3>
+        <p class="text-secondary small mb-0">Automated multi-engine alert dispatch, investigation workflow, and state auditing</p>
+    </div>
+</div>
+
+<div class="glass-panel p-3 mb-4">
+    <div class="row g-3">
+        <div class="col-lg-3 col-md-6">
+            <div class="position-relative">
+                <i class="fa-solid fa-magnifying-glass position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+                <input type="text" id="alert-search" class="glass-input ps-5 w-100" placeholder="Search Alert / Cust / Tx...">
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <select id="alert-severity" class="glass-select w-100">
+                <option value="">All Severity Levels</option>
+                <option value="CRITICAL">CRITICAL</option>
+                <option value="HIGH">HIGH</option>
+                <option value="WARNING">WARNING</option>
+                <option value="INFO">INFO</option>
+            </select>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <select id="alert-status" class="glass-select w-100">
+                <option value="">All Triage States</option>
+                <option value="Open">Open</option>
+                <option value="Under Review">Under Review</option>
+                <option value="Resolved">Resolved</option>
+                <option value="False Positive">False Positive</option>
+            </select>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <button id="btn-filter-alerts" class="btn btn-glass-danger w-100">
+                <i class="fa-solid fa-filter me-1"></i>Filter Alert Queue
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="glass-panel p-3">
+    <div class="table-responsive">
+        <table class="glass-table">
+            <thead>
+                <tr>
+                    <th>Alert Identifier</th>
+                    <th>Target Customer</th>
+                    <th>Suspect Tx ID</th>
+                    <th>Pattern Classification</th>
+                    <th>Severity Tier</th>
+                    <th>Risk Score</th>
+                    <th>Workflow State</th>
+                    <th>Trigger Timestamp</th>
+                    <th>Triage Action</th>
+                </tr>
+            </thead>
+            <tbody id="tbl-alerts">
+                <tr><td colspan="9" class="text-center text-muted py-5"><i class="fa-solid fa-spinner fa-spin me-2"></i>Loading compliance alerts...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 pt-3 border-top border-secondary" style="border-color: var(--glass-border) !important;">
+        <span class="text-secondary small font-monospace" id="alert-page-info">Showing page 1</span>
+        <ul class="pagination pagination-sm mb-0 gap-1" id="alert-pagination"></ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadAlerts(1);
+    document.getElementById('btn-filter-alerts').addEventListener('click', () => loadAlerts(1));
+    document.getElementById('alert-search').addEventListener('keypress', (e) => { if (e.key === 'Enter') loadAlerts(1); });
+});
+
+function loadAlerts(page) {
+    const search = document.getElementById('alert-search').value;
+    const severity = document.getElementById('alert-severity').value;
+    const status = document.getElementById('alert-status').value;
+
+    fetch(`/api/alerts?page=${page}&search=${encodeURIComponent(search)}&severity=${severity}&status=${encodeURIComponent(status)}`)
+        .then(r => r.json())
+        .then(data => {
+            const tbody = document.getElementById('tbl-alerts');
+            tbody.innerHTML = '';
+            if (data.alerts.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-5"><i class="fa-solid fa-bell-slash fs-3 mb-2 d-block"></i>No matching alerts in queue.</td></tr>';
+                return;
+            }
+            data.alerts.forEach(a => {
+                let sevBadge = 'badge-blue';
+                if (a.severity === 'WARNING') sevBadge = 'badge-medium';
+                if (a.severity === 'HIGH') sevBadge = 'badge-high';
+                if (a.severity === 'CRITICAL') sevBadge = 'badge-critical';
+
+                let statusBadge = 'badge-medium';
+                if (a.status === 'Resolved') statusBadge = 'badge-low';
+                if (a.status === 'False Positive') statusBadge = 'badge-blue';
+                if (a.status === 'Under Review') statusBadge = 'badge-cyan';
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td><code>${a.alert_id}</code></td>
+                        <td><a href="/customers/${a.customer_id}" class="text-cyan-accent text-decoration-none fw-semibold" style="color: var(--cyan-accent);">${a.customer_id}</a></td>
+                        <td><a href="/transactions/${a.transaction_id}" class="text-primary text-decoration-none">${a.transaction_id}</a></td>
+                        <td class="fw-semibold text-white">${a.alert_type}</td>
+                        <td><span class="glass-badge ${sevBadge}">${a.severity}</span></td>
+                        <td class="font-monospace fw-bold text-white">${a.risk_score}</td>
+                        <td><span class="glass-badge ${statusBadge}">${a.status}</span></td>
+                        <td><small class="text-muted font-monospace">${new Date(a.created_at).toLocaleString()}</small></td>
+                        <td>
+                            <a href="/alerts/${a.alert_id}" class="btn-glass-danger btn-sm py-1 px-3 text-decoration-none" style="font-size: 0.78rem;">
+                                Investigate Dossier
+                            </a>
+                        </td>
+                    </tr>
+                `;
+            });
+            document.getElementById('alert-page-info').innerText = `Page ${data.current_page} of ${data.pages}`;
+            renderAlertPagination(data.current_page, data.pages);
+        });
+}
+
+function renderAlertPagination(current, total) {
+    const container = document.getElementById('alert-pagination');
+    container.innerHTML = '';
+    if (total <= 1) return;
+    for (let i = 1; i <= Math.min(total, 10); i++) {
+        const active = i === current ? 'btn-glass-primary' : 'btn-glass-secondary';
+        container.innerHTML += `<li class="page-item"><button class="btn btn-sm ${active} py-1 px-2 font-monospace" style="font-size: 0.8rem;" onclick="loadAlerts(${i}); return false;">${i}</button></li>`;
+    }
+}
+</script>
+{% endblock %}
